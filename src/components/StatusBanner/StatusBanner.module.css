@@ -1,0 +1,25 @@
+.banner {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+}
+
+.info {
+  background: rgba(91, 141, 239, 0.15);
+  color: var(--color-accent-hover);
+}
+
+.success {
+  background: rgba(62, 207, 142, 0.15);
+  color: var(--color-success);
+}
+
+.error {
+  background: rgba(239, 107, 107, 0.15);
+  color: var(--color-danger);
+}
+
+.warning {
+  background: rgba(232, 184, 74, 0.15);
+  color: var(--color-warning);
+}
