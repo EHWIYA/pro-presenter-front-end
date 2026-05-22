@@ -1,0 +1,41 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.venueItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-md);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-align: left;
+  transition: border-color 0.15s;
+}
+
+.venueItem:hover {
+  border-color: var(--color-accent);
+}
+
+.venueItemSelected {
+  border-color: var(--color-accent);
+  background: rgba(91, 141, 239, 0.1);
+}
+
+.venueName {
+  font-weight: 600;
+}
+
+.venueDesc {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  margin-top: var(--space-md);
+}
