@@ -16,6 +16,7 @@ export function WorshipBuildPage() {
 
   function handleBuild() {
     if (!venueId || build.isPending) return;
+    if (!text.trim()) return;
     setVerseText(text);
     build.mutate(text);
   }
@@ -34,7 +35,7 @@ export function WorshipBuildPage() {
   return (
     <Card
       title="구절 입력"
-      subtitle="한 줄에 한 슬라이드. 빌드 후 slide_map index가 trigger index와 같습니다."
+      subtitle="첫 비어 있지 않은 줄을 성경 참조로 빌드합니다. 송출 시 slide_map의 index를 사용하세요."
     >
       <label className="sr-only" htmlFor="verse-text">
         성경 구절 텍스트
@@ -47,9 +48,12 @@ export function WorshipBuildPage() {
         placeholder="요한복음 3:16&#10;하나님이 세상을 이처럼 사랑하사…"
         disabled={build.isPending}
       />
-      <p className={styles.hint}>빌드는 한 번에 하나만 실행됩니다 (중복 요청 방지).</p>
+      <p className={styles.hint}>
+        빌드·송출은 현장 에이전트(8787)가 떠 있어야 합니다. probe는 ProPresenter 연결만
+        확인합니다.
+      </p>
 
-      <Button fullWidth disabled={build.isPending} onClick={handleBuild}>
+      <Button fullWidth disabled={build.isPending || !text.trim()} onClick={handleBuild}>
         {build.isPending ? '빌드 중…' : '빌드'}
       </Button>
 
@@ -62,7 +66,11 @@ export function WorshipBuildPage() {
       {slideMap && slideMap.length > 0 ? (
         <>
           <StatusBanner tone="success">
-            {slideMap.length}개 슬라이드 준비됨 — 송출 탭에서 trigger 하세요.
+            {(build.data?.reference ?? cached?.reference)
+              ? `${build.data?.reference ?? cached?.reference} · `
+              : ''}
+            {build.data?.slide_count ?? cached?.slide_count ?? slideMap.length}개 슬라이드
+            준비됨 — 송출 탭에서 trigger 하세요.
           </StatusBanner>
           <SlideGrid
             slides={slideMap}

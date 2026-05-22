@@ -17,6 +17,6 @@
 배포 직후 https://pro-app.iwhya.kr 에서 플레이스홀더 → PWA 교체 여부 확인하겠습니다.  
 해당 시각에 rsync·nginx 로그 함께 봐 주시면 감사하겠습니다.
 
-pro-api worship·API Key는 백엔드 안내 후 `VITE_API_KEY` 반영 예정입니다.
+pro-api worship(build/trigger) 운영 배포 완료 — 경로·body 변경 없음. API Key(P1) 도입 시 `VITE_API_KEY` 재빌드 예정.
 
 감사합니다.

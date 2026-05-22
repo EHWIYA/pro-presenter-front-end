@@ -34,7 +34,7 @@ export async function mockProbeVenue(venueId: string): Promise<VenueProbe> {
 }
 
 export async function mockBuildWorship(
-  venueId: string,
+  _venueId: string,
   body: WorshipBuildRequest,
 ): Promise<WorshipBuildResponse> {
   await delay(500);
@@ -56,18 +56,24 @@ export async function mockBuildWorship(
           { index: 2, label: '본문 2', preview: '데모 본문 2' },
         ];
 
-  return { venue_id: venueId, slide_map };
+  const reference = lines[0] ?? '데모 참조';
+  return {
+    ok: true,
+    reference,
+    slide_count: slide_map.length,
+    slide_map,
+    message: 'mock build ok',
+  };
 }
 
 export async function mockTriggerSlide(
-  venueId: string,
+  _venueId: string,
   body: WorshipTriggerRequest,
 ): Promise<WorshipTriggerResponse> {
   await delay(400);
   return {
-    venue_id: venueId,
-    index: body.index,
     ok: true,
+    index: body.index,
     message: `mock triggered index ${body.index}`,
   };
 }

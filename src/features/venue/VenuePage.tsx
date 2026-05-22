@@ -78,9 +78,11 @@ export function VenuePage() {
       {probeEnabled && probe.data ? (
         <StatusBanner tone={probe.data.agent_reachable ? 'success' : 'warning'}>
           {probe.data.agent_reachable
-            ? '에이전트 연결됨'
-            : '에이전트에 연결되지 않음'}
+            ? 'ProPresenter 연결됨 (probe)'
+            : 'ProPresenter에 연결되지 않음 (probe)'}
           {probe.data.message ? ` — ${probe.data.message}` : ''}
+          {' '}
+          (빌드·송출은 별도 현장 에이전트 8787 필요)
         </StatusBanner>
       ) : null}
 

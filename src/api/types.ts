@@ -22,8 +22,11 @@ export interface WorshipBuildRequest {
 }
 
 export interface WorshipBuildResponse {
-  venue_id: string;
+  ok: boolean;
+  reference?: string;
+  slide_count?: number;
   slide_map: SlideMapEntry[];
+  message?: string;
 }
 
 export interface WorshipTriggerRequest {
@@ -31,10 +34,9 @@ export interface WorshipTriggerRequest {
 }
 
 export interface WorshipTriggerResponse {
-  venue_id: string;
-  index: number;
   ok: boolean;
   message?: string;
+  index?: number;
 }
 
 export interface ApiErrorBody {
