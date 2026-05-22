@@ -39,9 +39,10 @@ npm run build
 
 ## MVP 흐름
 
-1. **현장** — venue 선택 · probe
-2. **빌드** — 구절 입력 → POST build → `slide_map`
-3. **송출** — `slide_map[i].index` = trigger index (optimistic 없음)
+1. **연결** — venue 선택 · probe → 성공 시 **홈** 이동
+2. **홈** — 프레젠테이션·그룹·슬라이드 수 목록 (`GET /venues/{id}/presentations`, 백엔드 협의·mock)
+3. **빌드** — 구절 입력 → POST build → `slide_map`
+4. **송출** — `slide_map[i].index` = trigger index (optimistic 없음)
 
 ## 환경 변수
 
