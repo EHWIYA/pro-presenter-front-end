@@ -40,7 +40,10 @@ export function VenuePage() {
   }
 
   return (
-    <Card title="현장 선택" subtitle="예배 장소를 선택한 뒤 연결을 확인하세요.">
+    <Card
+      title="현장 선택"
+      subtitle="장소 선택 → 연결 확인(probe)으로 ProPresenter(pp_port)만 검사합니다."
+    >
       <div className={styles.list} role="listbox" aria-label="현장 목록">
         {venues?.map((venue) => (
           <button

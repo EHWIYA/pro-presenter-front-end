@@ -1,6 +1,23 @@
 import { apiFetch, isMockMode } from './client';
 import { mockFetchVenues, mockProbeVenue } from './mock';
-import type { Venue, VenueProbe } from './types';
+import type { Venue, VenueProbe, VenueProbeApiResponse } from './types';
+
+function normalizeVenueProbe(data: VenueProbeApiResponse): VenueProbe {
+  const reachable =
+    data.agent_reachable ?? data.ok ?? data.online ?? false;
+  const message =
+    data.message ??
+    data.hint ??
+    (data.status_code != null ? `HTTP ${data.status_code}` : undefined) ??
+    (data.url ? data.url : undefined);
+
+  return {
+    venue_id: data.venue_id,
+    online: data.online ?? reachable,
+    agent_reachable: reachable,
+    message,
+  };
+}
 
 /** pro-api: `{ venues: Venue[] }` · 레거시/목: 배열만 */
 type VenuesApiResponse = Venue[] | { venues: Venue[] };
@@ -22,5 +39,8 @@ export async function probeVenue(venueId: string): Promise<VenueProbe> {
   if (isMockMode()) {
     return mockProbeVenue(venueId);
   }
-  return apiFetch<VenueProbe>(`/venues/${encodeURIComponent(venueId)}/probe`);
+  const data = await apiFetch<VenueProbeApiResponse>(
+    `/venues/${encodeURIComponent(venueId)}/probe`,
+  );
+  return normalizeVenueProbe(data);
 }

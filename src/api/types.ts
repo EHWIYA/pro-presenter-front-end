@@ -4,10 +4,23 @@ export interface Venue {
   description?: string;
 }
 
+/** UI·훅용 정규화 결과 */
 export interface VenueProbe {
   venue_id: string;
   online: boolean;
   agent_reachable: boolean;
+  message?: string;
+}
+
+/** pro-api GET /venues/{id}/probe 원본 */
+export interface VenueProbeApiResponse {
+  venue_id: string;
+  ok?: boolean;
+  online?: boolean;
+  agent_reachable?: boolean;
+  url?: string;
+  status_code?: number;
+  hint?: string | null;
   message?: string;
 }
 
