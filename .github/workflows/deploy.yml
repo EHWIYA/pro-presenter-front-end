@@ -1,0 +1,95 @@
+# NAS GHA 배포 — Hwiya IoT Web·백엔드 Deploy NAS와 동일 패턴
+# Tailscale: TS_AUTH_KEY (reusable auth key, OAuth 미사용)
+# rsync: NAS_SSH_KEY → iwh@100.88.40.125:/home/iwh/pro-presenter/web/dist/
+
+name: Deploy PWA to NAS
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate PWA icons
+        run: npm run icons
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://pro-api.iwhya.kr' }}
+          VITE_USE_MOCK: 'false'
+
+      - name: Connect Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TS_AUTH_KEY }}
+          ping: 100.88.40.125
+          use-cache: 'true'
+
+      - name: Deploy to NAS via rsync
+        env:
+          NAS_SSH_KEY: ${{ secrets.NAS_SSH_KEY }}
+          NAS_HOST: ${{ secrets.NAS_HOST }}
+          NAS_DEPLOY_PATH: ${{ secrets.NAS_DEPLOY_PATH }}
+          NAS_DEPLOY_USER: ${{ secrets.NAS_DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${NAS_SSH_KEY:-}" ]; then
+            echo "::error::NAS_SSH_KEY secret is required (IoT·백엔드와 동일 배포 키)"
+            exit 1
+          fi
+
+          HOST="${NAS_HOST:-${DEPLOY_HOST:-100.88.40.125}}"
+          REMOTE_PATH="${NAS_DEPLOY_PATH:-${DEPLOY_PATH:-/home/iwh/pro-presenter/web/dist}}"
+          REMOTE_USER="${NAS_DEPLOY_USER:-${DEPLOY_USER:-iwh}}"
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$NAS_SSH_KEY" > ~/.ssh/nas_deploy_key
+          chmod 600 ~/.ssh/nas_deploy_key
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          RSYNC_TARGET="${REMOTE_USER}@${HOST}:${REMOTE_PATH}/"
+          echo "Deploying dist/ → ${RSYNC_TARGET}"
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/nas_deploy_key -o StrictHostKeyChecking=accept-new" \
+            dist/ "$RSYNC_TARGET"
+
+      - name: Post-deploy hook (optional)
+        continue-on-error: true
+        env:
+          NAS_SSH_KEY: ${{ secrets.NAS_SSH_KEY }}
+          NAS_HOST: ${{ secrets.NAS_HOST }}
+          NAS_DEPLOY_PATH: ${{ secrets.NAS_DEPLOY_PATH }}
+          NAS_DEPLOY_USER: ${{ secrets.NAS_DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          HOST="${NAS_HOST:-${DEPLOY_HOST:-100.88.40.125}}"
+          REMOTE_USER="${NAS_DEPLOY_USER:-${DEPLOY_USER:-iwh}}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$NAS_SSH_KEY" > ~/.ssh/nas_deploy_key
+          chmod 600 ~/.ssh/nas_deploy_key
+          ssh -i ~/.ssh/nas_deploy_key -o StrictHostKeyChecking=accept-new \
+            "${REMOTE_USER}@${HOST}" \
+            'if [ -x /home/iwh/pro-presenter/web/bin/post-deploy.sh ]; then /home/iwh/pro-presenter/web/bin/post-deploy.sh; else echo "no post-deploy.sh"; fi'
