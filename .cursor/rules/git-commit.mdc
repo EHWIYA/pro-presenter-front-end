@@ -1,0 +1,51 @@
+---
+description: Git 커밋 메시지·분할 규칙 (Hwiya 백엔드/IoT와 동일)
+alwaysApply: true
+---
+
+# Git 커밋 규칙
+
+## 메시지 형식 (필수)
+
+```
+YYMMDD > type : 설명
+```
+
+- **YYMMDD**: **커밋 메시지를 작성·실행하는 그날**의 날짜 (KST, `date +%y%m%d` 또는 당일 확인). 작업일·푸시일·이미지 예시 날짜를 임의로 쓰지 않음.
+- **구분자**: ` > ` (공백+꺾쇄+공백), ` : ` (콜론 앞뒤 공백)
+- **설명**: 한글 위주, 복수 항목은 **가운데점 `·`** 로 연결
+- Conventional Commits 접두어(`feat:`) **사용하지 않음**
+
+### type
+
+| type | 용도 |
+|------|------|
+| `feat` | 화면·API·훅·기능 |
+| `fix` | 버그·워크플로 수정 |
+| `build` | Docker·compose·의존성 (프론트: package·Vite 빌드 체인) |
+| `ci` | GHA 워크플로·CI 단계 (테스트 job 등) |
+| `deploy` | NAS·Tailscale·rsync·운영 배포 연동 |
+| `docs` | README·DEPLOY·공조·ENV 예시 |
+| `chore` | gitignore·스크립트·설정·잡일 |
+| `test` | 단위·E2E 테스트 |
+
+### 예시 (접두어는 당일 YYMMDD로 치환)
+
+```
+{오늘} > feat : venue·worship·settings 화면·AppShell 라우팅
+{오늘} > deploy : GHA TS_AUTH_KEY·NAS_SSH_KEY·pro-app rsync
+{오늘} > chore : gitignore 섹션·OS·editor·env
+```
+
+커밋 직전: KST 기준 오늘 `YYMMDD` 확인 후 메시지에 반영.
+
+## 커밋 분할
+
+- **한 커밋 = 한 관심사** (스캐폴드 / UI / api / hooks / features / PWA / deploy / docs / chore)
+- `package-lock.json`은 해당 `build`·`chore` 커밋에 포함
+- 비밀·키는 커밋하지 않음 (`.env` 로컬만, `.env.example`은 `docs`)
+
+## 커밋 전
+
+- 사용자가 **커밋 요청**할 때만 `git commit` 실행
+- 히스토리 재작성(force push)은 **명시 요청** 시에만
