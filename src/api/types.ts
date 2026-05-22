@@ -52,6 +52,26 @@ export interface WorshipTriggerResponse {
   index?: number;
 }
 
+/** 프레젠테이션 내 그룹 요약 (라벨 + 슬라이드 수) */
+export interface PresentationGroupSummary {
+  label: string;
+  slide_count: number;
+}
+
+/** 현장 PC가 보유한 프레젠테이션 요약 */
+export interface PresentationSummary {
+  id: string;
+  label: string;
+  group_count: number;
+  slide_count: number;
+  groups: PresentationGroupSummary[];
+}
+
+export interface VenuePresentationsResponse {
+  venue_id: string;
+  presentations: PresentationSummary[];
+}
+
 export interface ApiErrorBody {
   detail?: string;
   message?: string;

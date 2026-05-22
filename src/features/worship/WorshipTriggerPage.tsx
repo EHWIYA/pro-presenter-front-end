@@ -42,8 +42,8 @@ export function WorshipTriggerPage() {
     return (
       <Card title="송출">
         <StatusBanner tone="warning">현장을 선택하세요.</StatusBanner>
-        <Button fullWidth onClick={() => navigate('/venue')}>
-          현장 선택
+        <Button fullWidth onClick={() => navigate('/')}>
+          PC 연결
         </Button>
       </Card>
     );

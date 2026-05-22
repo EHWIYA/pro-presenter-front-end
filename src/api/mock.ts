@@ -1,6 +1,7 @@
 import type {
   Venue,
   VenueProbe,
+  VenuePresentationsResponse,
   WorshipBuildRequest,
   WorshipBuildResponse,
   WorshipTriggerRequest,
@@ -8,9 +9,66 @@ import type {
 } from './types';
 
 const MOCK_VENUES: Venue[] = [
+  { id: 'test', name: '현장 테스트 PC', description: 'NAS venues.json' },
   { id: 'main-hall', name: '본당', description: '주일 예배' },
   { id: 'chapel', name: '소예배실', description: '수요·금요' },
 ];
+
+const MOCK_PRESENTATIONS_BY_VENUE: Record<string, VenuePresentationsResponse> = {
+  test: {
+    venue_id: 'test',
+    presentations: [
+      {
+        id: 'pres-sunday-am',
+        label: '주일 1부',
+        group_count: 4,
+        slide_count: 48,
+        groups: [
+          { label: '예배 전', slide_count: 4 },
+          { label: '찬양', slide_count: 12 },
+          { label: '말씀', slide_count: 28 },
+          { label: '봉헌·광고', slide_count: 4 },
+        ],
+      },
+      {
+        id: 'pres-sunday-pm',
+        label: '주일 2부',
+        group_count: 3,
+        slide_count: 35,
+        groups: [
+          { label: '찬양', slide_count: 10 },
+          { label: '말씀', slide_count: 22 },
+          { label: '마무리', slide_count: 3 },
+        ],
+      },
+      {
+        id: 'pres-special',
+        label: '특별집회',
+        group_count: 2,
+        slide_count: 18,
+        groups: [
+          { label: '소개', slide_count: 5 },
+          { label: '본 프로그램', slide_count: 13 },
+        ],
+      },
+    ],
+  },
+  'main-hall': {
+    venue_id: 'main-hall',
+    presentations: [
+      {
+        id: 'pres-main-default',
+        label: '본당 기본',
+        group_count: 2,
+        slide_count: 20,
+        groups: [
+          { label: '오프닝', slide_count: 6 },
+          { label: '본문', slide_count: 14 },
+        ],
+      },
+    ],
+  },
+};
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -21,6 +79,18 @@ function delay(ms: number): Promise<void> {
 export async function mockFetchVenues(): Promise<Venue[]> {
   await delay(200);
   return [...MOCK_VENUES];
+}
+
+export async function mockFetchVenuePresentations(
+  venueId: string,
+): Promise<VenuePresentationsResponse> {
+  await delay(350);
+  return (
+    MOCK_PRESENTATIONS_BY_VENUE[venueId] ?? {
+      venue_id: venueId,
+      presentations: [],
+    }
+  );
 }
 
 export async function mockProbeVenue(venueId: string): Promise<VenueProbe> {

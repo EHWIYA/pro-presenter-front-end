@@ -4,10 +4,11 @@ import { useVenues } from '@/hooks';
 import styles from './AppShell.module.css';
 
 const tabs = [
-  { to: '/venue', label: '현장', icon: '🏛' },
-  { to: '/worship/build', label: '빌드', icon: '📝' },
-  { to: '/worship/trigger', label: '송출', icon: '▶' },
-  { to: '/settings', label: '설정', icon: '⚙' },
+  { to: '/', label: '연결', icon: '🔗', end: true },
+  { to: '/home', label: '홈', icon: '🏠', end: true },
+  { to: '/worship/build', label: '빌드', icon: '📝', end: false },
+  { to: '/worship/trigger', label: '송출', icon: '▶', end: false },
+  { to: '/settings', label: '설정', icon: '⚙', end: true },
 ] as const;
 
 export function AppShell() {
@@ -34,6 +35,7 @@ export function AppShell() {
           <NavLink
             key={tab.to}
             to={tab.to}
+            end={tab.end}
             className={({ isActive }) =>
               [styles.navLink, isActive ? styles.navLinkActive : '']
                 .filter(Boolean)

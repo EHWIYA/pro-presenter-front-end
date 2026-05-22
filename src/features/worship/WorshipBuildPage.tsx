@@ -24,9 +24,9 @@ export function WorshipBuildPage() {
   if (!venueId) {
     return (
       <Card title="구절 빌드">
-        <StatusBanner tone="warning">먼저 현장 탭에서 장소를 선택하세요.</StatusBanner>
-        <Button fullWidth onClick={() => navigate('/venue')}>
-          현장 선택
+        <StatusBanner tone="warning">먼저 연결 탭에서 PC를 연결하세요.</StatusBanner>
+        <Button fullWidth onClick={() => navigate('/')}>
+          PC 연결
         </Button>
       </Card>
     );
