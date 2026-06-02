@@ -8,6 +8,7 @@
 |--------|------|
 | `TS_AUTH_KEY` | Tailscale reusable auth key (IoT Web 또는 백엔드 Deploy NAS와 **동일 키 재사용**) |
 | `NAS_SSH_KEY` | NAS SSH private key (IoT·백엔드 GHA와 **동일 배포 키**) |
+| `VITE_API_KEY` | `pro-api` 인증 키 (필수: 운영 실연동) |
 
 ## GitHub Secrets / Variables (선택 — 미설정 시 아래 기본값)
 
@@ -38,6 +39,7 @@ Actions → **Deploy PWA to NAS** → Run workflow
 
 - HTTPS·CORS(`https://pro-app.iwhya.kr`) — NAS 준비 완료
 - worship·song — PWA → NAS만 호출, 별도 API Key 없음
+- 운영에서는 `VITE_API_KEY`가 빌드 시점에 주입되어 번들에 포함됩니다.
 
 ## 첫 배포 후 확인
 

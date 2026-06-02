@@ -29,10 +29,22 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Validate VITE_API_KEY (live build)
+        env:
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY || secrets.API_KEY }}
+        run: |
+          if [ -z "${VITE_API_KEY:-}" ]; then
+            echo "::error::VITE_API_KEY secret is required for live build"
+            exit 1
+          fi
+
       - name: Build
         run: npm run build
         env:
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://pro-api.iwhya.kr' }}
+          # Vite는 빌드 시점의 import.meta.env 값을 번들에 고정합니다.
+          # 운영(PWA)에서 VITE_API_KEY가 비어 있으면 클라이언트가 실행 전에 중단합니다.
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY || secrets.API_KEY }}
           VITE_USE_MOCK: 'false'
 
       - name: Connect Tailscale
