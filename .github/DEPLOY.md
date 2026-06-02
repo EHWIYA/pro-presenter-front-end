@@ -37,7 +37,7 @@ Actions → **Deploy PWA to NAS** → Run workflow
 ## pro-api
 
 - HTTPS·CORS(`https://pro-app.iwhya.kr`) — NAS 준비 완료
-- worship·API Key — 백엔드 배포 후 별도 (`VITE_API_KEY` Secret 또는 Variables)
+- worship·song — PWA → NAS만 호출, 별도 API Key 없음
 
 ## 첫 배포 후 확인
 

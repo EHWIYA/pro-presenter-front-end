@@ -38,11 +38,6 @@ export async function apiFetch<T>(
     headers.set('Content-Type', 'application/json');
   }
 
-  const apiKey = import.meta.env.VITE_API_KEY?.trim();
-  if (apiKey) {
-    headers.set('X-API-Key', apiKey);
-  }
-
   const response = await fetch(url, { ...init, headers });
 
   if (!response.ok) {

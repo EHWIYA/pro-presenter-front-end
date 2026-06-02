@@ -19,7 +19,7 @@ export function SettingsPage() {
         <strong>API Base:</strong> {baseUrl}
       </p>
       <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-        환경 변수: VITE_API_BASE_URL, VITE_API_KEY, VITE_USE_MOCK
+        환경 변수: VITE_API_BASE_URL, VITE_USE_MOCK (.env)
       </p>
     </Card>
   );
