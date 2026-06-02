@@ -1,9 +1,11 @@
 import type {
+  AnalyzeResponse,
   SongAnalyzeRequest,
-  SongAnalyzeResponse,
   SongBuildRequest,
   SongBuildResponse,
+  SongDetail,
   SongJobResponse,
+  SongListResponse,
   SongSection,
   Venue,
   VenueProbe,
@@ -155,6 +157,41 @@ export async function mockTriggerSlide(
   };
 }
 
+const MOCK_LIBRARY_SONGS: SongDetail[] = [
+  {
+    songId: '550e8400-e29b-41d4-a716-446655440000',
+    title: '주님의 마음',
+    artist: null,
+    tags: [],
+    sections: [
+      {
+        type: 'verse',
+        label: '1절',
+        lines: ['주님의 마음 주님의 음성', '나를 부르시네'],
+      },
+      {
+        type: 'chorus',
+        label: '후렴',
+        lines: ['할렐루야', '주님께 영광'],
+      },
+    ],
+    createdAt: '2026-06-01T00:00:00+00:00',
+    updatedAt: '2026-06-02T05:13:17+00:00',
+  },
+  {
+    songId: '660e8400-e29b-41d4-a716-446655440001',
+    title: '주님만이',
+    artist: null,
+    tags: ['찬양'],
+    sections: [
+      { type: 'verse', label: '1절', lines: ['주님만이', '나의 주님'] },
+      { type: 'chorus', label: '후렴', lines: ['오 주님', '찬양해'] },
+    ],
+    createdAt: '2026-06-01T00:00:00+00:00',
+    updatedAt: '2026-06-01T12:00:00+00:00',
+  },
+];
+
 const mockJobStore = new Map<
   string,
   { createdAt: number; request: SongAnalyzeRequest }
@@ -188,10 +225,80 @@ function mockSectionsFromLyrics(lyrics: string, title: string): SongSection[] {
   });
 }
 
+export async function mockFetchSongs(
+  q: string,
+  limit: number,
+  offset: number,
+): Promise<SongListResponse> {
+  await delay(250);
+  const query = q.trim().toLowerCase();
+  const filtered = MOCK_LIBRARY_SONGS.filter(
+    (s) => !query || s.title.toLowerCase().includes(query),
+  );
+  const items = filtered.slice(offset, offset + limit).map((s) => ({
+    songId: s.songId,
+    title: s.title,
+    artist: s.artist,
+    tags: s.tags,
+    sectionCount: s.sections.length,
+    updatedAt: s.updatedAt,
+  }));
+  return { items, total: filtered.length };
+}
+
+export async function mockFetchSong(songId: string): Promise<SongDetail> {
+  await delay(200);
+  const found = MOCK_LIBRARY_SONGS.find((s) => s.songId === songId);
+  if (!found) {
+    throw new Error('곡을 찾을 수 없습니다.');
+  }
+  return { ...found, sections: found.sections.map((s) => ({ ...s, lines: [...s.lines] })) };
+}
+
+export async function mockUpdateSongSections(
+  songId: string,
+  sections: SongSection[],
+): Promise<void> {
+  await delay(300);
+  const idx = MOCK_LIBRARY_SONGS.findIndex((s) => s.songId === songId);
+  if (idx < 0) throw new Error('곡을 찾을 수 없습니다.');
+  MOCK_LIBRARY_SONGS[idx] = {
+    ...MOCK_LIBRARY_SONGS[idx],
+    sections: sections.map((s) => ({ ...s, lines: [...s.lines] })),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export async function mockAnalyzeSong(
   body: SongAnalyzeRequest,
-): Promise<SongAnalyzeResponse> {
+): Promise<AnalyzeResponse> {
   await delay(300);
+  const title = body.songTitle.trim();
+
+  if (!body.forceReanalyze && title === '주님의 마음') {
+    const song = MOCK_LIBRARY_SONGS[0];
+    return {
+      source: 'library',
+      songId: song.songId,
+      title: song.title,
+      sections: song.sections.map((s) => ({ ...s, lines: [...s.lines] })),
+      schemaVersion: 'song-sections/v1',
+    };
+  }
+
+  if (!body.forceReanalyze && /후보/i.test(title)) {
+    return {
+      source: 'library_candidates',
+      query: title.replace(/후보/gi, '').trim() || '주님',
+      candidates: MOCK_LIBRARY_SONGS.map((s) => ({
+        songId: s.songId,
+        title: s.title,
+        sectionCount: s.sections.length,
+        updatedAt: s.updatedAt,
+      })),
+    };
+  }
+
   const jobId = `song-mock-${Date.now()}`;
   mockJobStore.set(jobId, { createdAt: Date.now(), request: body });
   return {
@@ -216,6 +323,7 @@ export async function mockGetSongJob(jobId: string): Promise<SongJobResponse> {
 
   const { request } = entry;
   const lyrics = request.lyricsText ?? '1절\n첫 줄\n둘째 줄\n\n후렴\n할렐루야';
+  const mockSongId = '770e8400-e29b-41d4-a716-446655440002';
   return {
     jobId,
     status: 'finished',
@@ -226,6 +334,8 @@ export async function mockGetSongJob(jobId: string): Promise<SongJobResponse> {
         ? ['mock: 이미지 분석은 가사 기반 데모 결과입니다.']
         : [],
     },
+    songId: mockSongId,
+    libraryAction: 'created',
   };
 }
 
@@ -234,7 +344,21 @@ export async function mockBuildSong(
 ): Promise<SongBuildResponse> {
   await delay(600);
   const baseIndex = body.buildMode === 'replace' ? 0 : 14;
-  const slide_map = body.sections.map((section, i) => ({
+
+  let sections: SongSection[] = body.sections ?? [];
+  let songTitle = body.songTitle ?? '';
+  let sourceSongId = body.songId;
+
+  if (body.songId && !body.sections) {
+    const song = MOCK_LIBRARY_SONGS.find((s) => s.songId === body.songId);
+    if (song) {
+      sections = song.sections;
+      songTitle = song.title;
+      sourceSongId = song.songId;
+    }
+  }
+
+  const slide_map = sections.map((section, i) => ({
     index: baseIndex + i,
     label: section.label,
     preview: section.lines.join(' / ').slice(0, 48),
@@ -242,10 +366,11 @@ export async function mockBuildSong(
 
   return {
     ok: true,
-    song_title: body.songTitle,
+    song_title: songTitle,
+    sourceSongId,
     build_mode: body.buildMode,
     slide_map,
-    groups: body.sections.map((section, i) => ({
+    groups: sections.map((section, i) => ({
       name: section.label,
       uuid: `mock-uuid-${i}`,
       slide_count: 1,
@@ -253,7 +378,7 @@ export async function mockBuildSong(
       color_hex: '#26a559',
     })),
     section_results: [],
-    total_slide_count: baseIndex + body.sections.length,
+    total_slide_count: baseIndex + sections.length,
     message: 'mock build-song ok',
   };
 }

@@ -1,0 +1,59 @@
+import { apiFetch, isMockMode } from './client';
+import {
+  mockFetchSong,
+  mockFetchSongs,
+  mockUpdateSongSections,
+} from './mock';
+import type {
+  SongDetail,
+  SongListResponse,
+  SongSection,
+  UpdateSongSectionsRequest,
+} from './types';
+
+export interface FetchSongsParams {
+  q?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export async function fetchSongs(
+  params: FetchSongsParams = {},
+): Promise<SongListResponse> {
+  const { q = '', limit = 20, offset = 0 } = params;
+  if (isMockMode()) {
+    return mockFetchSongs(q, limit, offset);
+  }
+  const search = new URLSearchParams();
+  if (q) search.set('q', q);
+  search.set('limit', String(limit));
+  search.set('offset', String(offset));
+  return apiFetch<SongListResponse>(`/api/v1/songs?${search.toString()}`);
+}
+
+export async function fetchSong(songId: string): Promise<SongDetail> {
+  if (isMockMode()) {
+    return mockFetchSong(songId);
+  }
+  return apiFetch<SongDetail>(
+    `/api/v1/songs/${encodeURIComponent(songId)}`,
+  );
+}
+
+export async function updateSongSections(
+  songId: string,
+  sections: SongSection[],
+): Promise<void> {
+  const body: UpdateSongSectionsRequest = { sections };
+  if (isMockMode()) {
+    await mockUpdateSongSections(songId, sections);
+    return;
+  }
+  await apiFetch<void>(
+    `/api/v1/songs/${encodeURIComponent(songId)}/sections`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    },
+  );
+}

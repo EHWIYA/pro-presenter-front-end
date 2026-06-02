@@ -99,8 +99,44 @@ export interface SongAnalyzeRequest {
   imageBase64?: string;
   imageMimeType?: string;
   lyricsText?: string;
+  forceReanalyze?: boolean;
+  saveToLibrary?: boolean;
+  librarySongId?: string | null;
+  clientRef?: string;
 }
 
+export type AnalyzeLibraryHit = {
+  source: 'library';
+  songId: string;
+  title: string;
+  sections: SongSection[];
+  schemaVersion: string;
+};
+
+export type AnalyzeCandidates = {
+  source: 'library_candidates';
+  query: string;
+  candidates: Array<{
+    songId: string;
+    title: string;
+    sectionCount: number;
+    updatedAt: string;
+  }>;
+};
+
+export type AnalyzeJobQueued = {
+  jobId: string;
+  status: 'queued';
+  kind: 'song_analyze';
+  pollUrl: string;
+};
+
+export type AnalyzeResponse =
+  | AnalyzeLibraryHit
+  | AnalyzeCandidates
+  | AnalyzeJobQueued;
+
+/** @deprecated AnalyzeJobQueued 사용 — 하위 호환 mock용 */
 export interface SongAnalyzeResponse {
   jobId: string;
   status: string;
@@ -114,21 +150,27 @@ export interface SongParsed {
   warnings: string[];
 }
 
+export type LibraryAction = 'created' | 'updated' | 'skipped';
+
 export interface SongJobResponse {
   jobId?: string;
   status: 'queued' | 'running' | 'finished' | 'error' | string;
   parsed?: SongParsed;
   error?: string;
   errorCode?: string;
+  songId?: string;
+  libraryAction?: LibraryAction;
+  songTitle?: string;
 }
 
 export type SongBuildMode = 'append' | 'replace';
 
 export interface SongBuildRequest {
   venueId: string;
-  songTitle: string;
   buildMode: SongBuildMode;
-  sections: SongSection[];
+  songId?: string;
+  songTitle?: string;
+  sections?: SongSection[];
 }
 
 export interface SongBuildGroup {
@@ -142,10 +184,39 @@ export interface SongBuildGroup {
 export interface SongBuildResponse {
   ok: boolean;
   song_title: string;
+  sourceSongId?: string;
   build_mode: SongBuildMode;
   slide_map: SlideMapEntry[];
   groups: SongBuildGroup[];
   section_results: unknown[];
   total_slide_count: number;
   message?: string;
+}
+
+export interface SongListItem {
+  songId: string;
+  title: string;
+  artist: string | null;
+  tags: string[];
+  sectionCount: number;
+  updatedAt: string;
+}
+
+export interface SongListResponse {
+  items: SongListItem[];
+  total: number;
+}
+
+export interface SongDetail {
+  songId: string;
+  title: string;
+  artist: string | null;
+  tags: string[];
+  sections: SongSection[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateSongSectionsRequest {
+  sections: SongSection[];
 }

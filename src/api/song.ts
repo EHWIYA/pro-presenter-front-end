@@ -1,12 +1,17 @@
-import { apiFetch, isMockMode } from './client';
+import { ApiError, apiFetch, assertApiKeyConfigured, getApiBaseUrl, getApiKey, isMockMode } from './client';
 import {
   mockAnalyzeSong,
   mockBuildSong,
   mockGetSongJob,
 } from './mock';
+import {
+  normalizeBuildResponse,
+  normalizeSongJob,
+  parseAnalyzeResponse,
+} from './normalize';
 import type {
+  AnalyzeResponse,
   SongAnalyzeRequest,
-  SongAnalyzeResponse,
   SongBuildRequest,
   SongBuildResponse,
   SongJobResponse,
@@ -14,23 +19,50 @@ import type {
 
 export async function analyzeSong(
   body: SongAnalyzeRequest,
-): Promise<SongAnalyzeResponse> {
+): Promise<AnalyzeResponse> {
   if (isMockMode()) {
     return mockAnalyzeSong(body);
   }
-  return apiFetch<SongAnalyzeResponse>('/api/v1/song/analyze', {
+
+  assertApiKeyConfigured();
+  const base = getApiBaseUrl();
+  const url = `${base}/api/v1/song/analyze`;
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  const apiKey = getApiKey();
+  if (apiKey) headers.set('X-API-Key', apiKey);
+
+  const response = await fetch(url, {
     method: 'POST',
+    headers,
     body: JSON.stringify(body),
   });
+
+  if (!response.ok) {
+    let message = response.statusText;
+    try {
+      const errBody = (await response.json()) as {
+        detail?: string;
+        message?: string;
+      };
+      message = errBody.detail ?? errBody.message ?? message;
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(response.status, message || '분석 요청 실패');
+  }
+
+  const data = (await response.json()) as Record<string, unknown>;
+  return parseAnalyzeResponse(data);
 }
 
 export async function getSongJob(jobId: string): Promise<SongJobResponse> {
   if (isMockMode()) {
     return mockGetSongJob(jobId);
   }
-  return apiFetch<SongJobResponse>(
+  const raw = await apiFetch<Record<string, unknown>>(
     `/api/v1/song/jobs/${encodeURIComponent(jobId)}`,
   );
+  return normalizeSongJob(raw);
 }
 
 export async function buildSong(
@@ -39,8 +71,12 @@ export async function buildSong(
   if (isMockMode()) {
     return mockBuildSong(body);
   }
-  return apiFetch<SongBuildResponse>('/api/v1/worship/build-song', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
+  const raw = await apiFetch<Record<string, unknown>>(
+    '/api/v1/worship/build-song',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+  );
+  return normalizeBuildResponse(raw);
 }

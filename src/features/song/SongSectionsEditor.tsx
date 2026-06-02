@@ -35,18 +35,26 @@ interface SongSectionsEditorProps {
   sections: SongSection[];
   warnings?: string[];
   disabled?: boolean;
+  canSave?: boolean;
+  savePending?: boolean;
+  saveMessage?: string | null;
   onChange: (sections: SongSection[]) => void;
   onConfirm: () => void;
   onBack: () => void;
+  onSave?: () => void;
 }
 
 export function SongSectionsEditor({
   sections,
   warnings = [],
   disabled = false,
+  canSave = false,
+  savePending = false,
+  saveMessage = null,
   onChange,
   onConfirm,
   onBack,
+  onSave,
 }: SongSectionsEditorProps) {
   const hasInvalid = !allSectionsValid(sections);
 
@@ -162,6 +170,21 @@ export function SongSectionsEditor({
         <StatusBanner tone="error">
           모든 구간에 1~2줄의 가사가 필요합니다.
         </StatusBanner>
+      ) : null}
+
+      {saveMessage ? (
+        <StatusBanner tone="info">{saveMessage}</StatusBanner>
+      ) : null}
+
+      {canSave && onSave ? (
+        <Button
+          variant="secondary"
+          fullWidth
+          disabled={disabled || savePending || hasInvalid}
+          onClick={onSave}
+        >
+          {savePending ? '저장 중…' : '라이브러리에 저장'}
+        </Button>
       ) : null}
 
       <div className={styles.actions}>

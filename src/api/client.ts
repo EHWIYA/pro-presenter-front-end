@@ -6,6 +6,20 @@ export function isMockMode(): boolean {
   return useMock;
 }
 
+export function getApiKey(): string | undefined {
+  const key = import.meta.env.VITE_API_KEY?.trim();
+  return key || undefined;
+}
+
+export function assertApiKeyConfigured(): void {
+  if (useMock) return;
+  if (!getApiKey()) {
+    throw new Error(
+      'VITE_API_KEY가 설정되지 않았습니다. NAS live/.env의 API_KEY를 .env에 추가하세요.',
+    );
+  }
+}
+
 export function getApiBaseUrl(): string {
   const base = import.meta.env.VITE_API_BASE_URL?.trim();
   if (!base && !useMock) {
@@ -30,12 +44,18 @@ export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
+  assertApiKeyConfigured();
   const base = getApiBaseUrl();
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
   const headers = new Headers(init?.headers);
 
   if (!headers.has('Content-Type') && init?.body) {
     headers.set('Content-Type', 'application/json');
+  }
+
+  const apiKey = getApiKey();
+  if (apiKey && !headers.has('X-API-Key')) {
+    headers.set('X-API-Key', apiKey);
   }
 
   const response = await fetch(url, { ...init, headers });
