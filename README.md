@@ -18,14 +18,13 @@ npm run icons   # public/icons 생성
 npm run dev     # http://localhost:5174
 ```
 
-`.env` 기본값: `VITE_USE_MOCK=true` (API 없이 동작)
+`.env` (gitignore, 레포 루트) 기본값: `VITE_USE_MOCK=true` (API 없이 동작)
 
-실 API 연동:
+실 API 연동 — `.env`에서:
 
-```bash
-cp .env.example .env
-# VITE_USE_MOCK=false 로 변경
-npm run dev
+```env
+VITE_USE_MOCK=false
+VITE_API_KEY=<NAS pro-presenter/live/.env API_KEY>
 ```
 
 ## 검증 (IoT Web 패턴)
@@ -50,7 +49,10 @@ npm run build
 | 변수 | 설명 |
 |------|------|
 | `VITE_API_BASE_URL` | pro-api 베이스 URL |
+| `VITE_API_KEY` | pro-api 인증 키 (실연동 시 필수, 커밋 금지) |
 | `VITE_USE_MOCK` | `true` 시 mock (네트워크 없음) |
+
+> **주의:** `.env.example` 등 `.env.*` 변형 파일은 사용하지 않습니다. 변수 추가 시 `.env`(로컬) + README만 갱신합니다.
 
 ## 배포
 

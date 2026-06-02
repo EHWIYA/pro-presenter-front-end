@@ -43,7 +43,7 @@ YYMMDD > type : 설명
 
 - **한 커밋 = 한 관심사** (스캐폴드 / UI / api / hooks / features / PWA / deploy / docs / chore)
 - `package-lock.json`은 해당 `build`·`chore` 커밋에 포함
-- 비밀·키는 커밋하지 않음 (`.env` 로컬만, `.env.example`은 `docs`)
+- 비밀·키는 커밋하지 않음 (`.env` 로컬만 — `.env.*` 예시 파일 레포에 두지 않음, README에 변수 설명)
 
 ## 커밋 전
 

@@ -7,9 +7,9 @@ dist-ssr/
 .vite/
 *.tsbuildinfo
 
-# --- env (secrets·로컬만) ---
+# --- env (secrets·로컬만 — .env 단일 파일, .env.* 변형 금지) ---
 .env
-.env.*.local
+.env.*
 *.local
 
 # --- test / coverage ---
