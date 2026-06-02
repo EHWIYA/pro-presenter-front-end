@@ -2,5 +2,7 @@ export { useVenues } from './useVenues';
 export { useVenueProbe } from './useVenueProbe';
 export { useVenuePresentations } from './useVenuePresentations';
 export { useBuildWorship } from './useBuildWorship';
+export { useBuildSong } from './useBuildSong';
 export { useTriggerSlide } from './useTriggerSlide';
 export { useWorshipBuildCache } from './useWorshipBuildCache';
+export { useSongAnalyze } from './useSongAnalyze';

@@ -76,3 +76,76 @@ export interface ApiErrorBody {
   detail?: string;
   message?: string;
 }
+
+export type SongSectionType =
+  | 'intro'
+  | 'verse'
+  | 'pre_chorus'
+  | 'chorus'
+  | 'bridge'
+  | 'tag'
+  | 'outro'
+  | 'instrumental'
+  | 'unknown';
+
+export interface SongSection {
+  type: SongSectionType;
+  label: string;
+  lines: string[];
+}
+
+export interface SongAnalyzeRequest {
+  songTitle: string;
+  imageBase64?: string;
+  imageMimeType?: string;
+  lyricsText?: string;
+}
+
+export interface SongAnalyzeResponse {
+  jobId: string;
+  status: string;
+  pollUrl: string;
+  kind: string;
+}
+
+export interface SongParsed {
+  song_title: string;
+  sections: SongSection[];
+  warnings: string[];
+}
+
+export interface SongJobResponse {
+  jobId?: string;
+  status: 'queued' | 'running' | 'finished' | 'error' | string;
+  parsed?: SongParsed;
+  error?: string;
+  errorCode?: string;
+}
+
+export type SongBuildMode = 'append' | 'replace';
+
+export interface SongBuildRequest {
+  venueId: string;
+  songTitle: string;
+  buildMode: SongBuildMode;
+  sections: SongSection[];
+}
+
+export interface SongBuildGroup {
+  name: string;
+  uuid: string;
+  slide_count: number;
+  first_index: number;
+  color_hex: string;
+}
+
+export interface SongBuildResponse {
+  ok: boolean;
+  song_title: string;
+  build_mode: SongBuildMode;
+  slide_map: SlideMapEntry[];
+  groups: SongBuildGroup[];
+  section_results: unknown[];
+  total_slide_count: number;
+  message?: string;
+}

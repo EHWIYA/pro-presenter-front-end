@@ -5,4 +5,5 @@ export const queryKeys = {
     ['venues', venueId, 'presentations'] as const,
   worshipBuild: (venueId: string, text: string) =>
     ['worship', 'build', venueId, text] as const,
+  songJob: (jobId: string) => ['song', 'job', jobId] as const,
 };

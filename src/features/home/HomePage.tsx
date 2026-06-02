@@ -86,7 +86,10 @@ export function HomePage() {
           PC 연결 다시 확인
         </Button>
         <Button fullWidth onClick={() => navigate('/worship/build')}>
-          구절 빌드로 이동
+          성경 구절 빌드
+        </Button>
+        <Button fullWidth onClick={() => navigate('/worship/song')}>
+          찬양 악보
         </Button>
       </div>
     </Card>

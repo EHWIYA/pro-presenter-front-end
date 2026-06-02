@@ -18,13 +18,13 @@ npm run icons   # public/icons 생성
 npm run dev     # http://localhost:5174
 ```
 
-`.env.development` 기본값: `VITE_USE_MOCK=true` (API 없이 동작)
+`.env` 기본값: `VITE_USE_MOCK=true` (API 없이 동작)
 
 실 API 연동:
 
 ```bash
-cp .env.example .env.local
-# VITE_API_BASE_URL, VITE_API_KEY 설정 후
+cp .env.example .env
+# VITE_USE_MOCK=false 로 변경
 npm run dev
 ```
 
@@ -40,16 +40,16 @@ npm run build
 ## MVP 흐름
 
 1. **연결** — venue 선택 · probe → 성공 시 **홈** 이동
-2. **홈** — 프레젠테이션·그룹·슬라이드 수 목록 (`GET /venues/{id}/presentations`, 백엔드 협의·mock)
-3. **빌드** — 구절 입력 → POST build → `slide_map`
-4. **송출** — `slide_map[i].index` = trigger index (optimistic 없음)
+2. **홈** — 프레젠테이션·그룹·슬라이드 수 목록
+3. **구절** — 성경 구절 입력 → POST build → `slide_map`
+4. **찬양** — analyze → 구간 편집 → build-song → `slide_map` + trigger
+5. **송출** — 구절 flow용 trigger (찬양은 찬양 탭에서 직접 송출)
 
 ## 환경 변수
 
 | 변수 | 설명 |
 |------|------|
 | `VITE_API_BASE_URL` | pro-api 베이스 URL |
-| `VITE_API_KEY` | `X-API-Key` 헤더 |
 | `VITE_USE_MOCK` | `true` 시 mock (네트워크 없음) |
 
 ## 배포
