@@ -24,6 +24,19 @@ export interface VenueProbeApiResponse {
   message?: string;
 }
 
+/** GET /venues/status venue별 상태 요약 */
+export interface VenueStatus {
+  venue_id: string;
+  connected: boolean;
+  status_code?: number;
+  message?: string;
+  checked_at?: string;
+}
+
+export interface VenueStatusResponse {
+  statuses: VenueStatus[];
+}
+
 export interface SlideMapEntry {
   index: number;
   label: string;
@@ -70,6 +83,13 @@ export interface PresentationSummary {
 export interface VenuePresentationsResponse {
   venue_id: string;
   presentations: PresentationSummary[];
+}
+
+/** GET /venues/{id}/presentation/current (가용 필드 최소화) */
+export interface CurrentPresentationPreview {
+  label?: string;
+  index?: number;
+  preview_text?: string;
 }
 
 export interface ApiErrorBody {

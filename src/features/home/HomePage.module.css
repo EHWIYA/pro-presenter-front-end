@@ -4,6 +4,45 @@
   color: var(--color-text-muted);
 }
 
+.currentSection {
+  margin-bottom: var(--space-md);
+}
+
+.sectionTitle {
+  margin: 0 0 var(--space-sm);
+  font-size: 0.9375rem;
+}
+
+.currentCard {
+  padding: var(--space-md);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.currentRow {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: 0.875rem;
+}
+
+.currentRow span {
+  color: var(--color-text-muted);
+}
+
+.previewText {
+  margin: 0;
+  padding-top: var(--space-xs);
+  border-top: 1px dashed var(--color-border);
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
 .presList {
   list-style: none;
   margin: 0;

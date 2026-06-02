@@ -1,6 +1,8 @@
 export { useVenues } from './useVenues';
+export { useVenueStatuses } from './useVenueStatuses';
 export { useVenueProbe } from './useVenueProbe';
 export { useVenuePresentations } from './useVenuePresentations';
+export { useCurrentPresentation } from './useCurrentPresentation';
 export { useBuildWorship } from './useBuildWorship';
 export { useBuildSong } from './useBuildSong';
 export { useTriggerSlide } from './useTriggerSlide';

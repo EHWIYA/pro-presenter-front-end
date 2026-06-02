@@ -8,6 +8,7 @@ import type {
   SongListResponse,
   SongSection,
   Venue,
+  VenueStatusResponse,
   VenueProbe,
   VenuePresentationsResponse,
   WorshipBuildRequest,
@@ -102,6 +103,29 @@ export async function mockFetchVenuePresentations(
   );
 }
 
+export async function mockFetchVenueStatuses(): Promise<VenueStatusResponse> {
+  await delay(250);
+  const checkedAt = new Date().toISOString();
+  return {
+    statuses: [
+      {
+        venue_id: 'test',
+        connected: true,
+        status_code: 200,
+        message: 'connected',
+        checked_at: checkedAt,
+      },
+      {
+        venue_id: 'main-hall',
+        connected: false,
+        status_code: 504,
+        message: 'timeout',
+        checked_at: checkedAt,
+      },
+    ],
+  };
+}
+
 export async function mockProbeVenue(venueId: string): Promise<VenueProbe> {
   await delay(300);
   return {
@@ -109,6 +133,29 @@ export async function mockProbeVenue(venueId: string): Promise<VenueProbe> {
     online: true,
     agent_reachable: venueId !== 'offline-demo',
     message: 'mock probe ok',
+  };
+}
+
+export async function mockFetchCurrentPresentation(
+  venueId: string,
+): Promise<{
+  label?: string;
+  index?: number;
+  preview_text?: string;
+}> {
+  await delay(220);
+  if (venueId === 'test') {
+    return {
+      label: '주일 1부',
+      index: 12,
+      preview_text: '오늘 우리에게 주시는 말씀 본문 미리보기',
+    };
+  }
+
+  return {
+    label: '대기 화면',
+    index: 0,
+    preview_text: '현재 송출 가능한 프리뷰가 없습니다.',
   };
 }
 

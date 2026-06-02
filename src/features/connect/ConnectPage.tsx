@@ -1,48 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { VenueStatus } from '@/api';
 import { Button, Card, Spinner, StatusBanner } from '@/components';
-import { useVenueProbe, useVenues } from '@/hooks';
+import { useVenueStatuses, useVenues } from '@/hooks';
 import { getSelectedVenueId, setSelectedVenueId } from '@/lib/session';
 import styles from './ConnectPage.module.css';
 
 export function ConnectPage() {
   const navigate = useNavigate();
   const { data: venues, isLoading, error } = useVenues();
+  const statusesQuery = useVenueStatuses();
   const [selectedId, setSelectedId] = useState<string | null>(
     getSelectedVenueId(),
   );
-  const [probeEnabled, setProbeEnabled] = useState(false);
-
-  const probe = useVenueProbe(selectedId, probeEnabled);
 
   function selectVenue(id: string) {
     setSelectedId(id);
     setSelectedVenueId(id);
-    setProbeEnabled(false);
   }
 
-  function handleProbe() {
+  function handleEnter() {
     if (!selectedId) return;
-    setProbeEnabled(true);
-    void probe.refetch();
+    navigate('/home');
   }
 
-  useEffect(() => {
-    if (
-      probeEnabled &&
-      selectedId &&
-      probe.data?.agent_reachable &&
-      !probe.isFetching
-    ) {
-      navigate('/home', { replace: true });
-    }
-  }, [
-    probeEnabled,
-    selectedId,
-    probe.data?.agent_reachable,
-    probe.isFetching,
-    navigate,
-  ]);
+  const statusMap = useMemo(() => {
+    const entries: Array<[string, VenueStatus]> =
+      statusesQuery.data?.map((status) => [status.venue_id, status]) ?? [];
+    return new Map<string, VenueStatus>(entries);
+  }, [statusesQuery.data]);
+
+  const selectedStatus = selectedId ? statusMap.get(selectedId) : undefined;
+  const canEnter = Boolean(selectedId && selectedStatus?.connected);
 
   if (isLoading) return <Spinner centered />;
   if (error) {
@@ -56,56 +45,78 @@ export function ConnectPage() {
   return (
     <Card
       title="PC 연결"
-      subtitle="장소를 선택한 뒤 연결을 확인하세요. 성공 시 홈으로 이동합니다."
+      subtitle="앱 진입 시 연결 상태를 자동 조회합니다. 연결 가능한 현장을 선택해 진입하세요."
     >
+      {statusesQuery.error ? (
+        <StatusBanner tone="warning">
+          일부 상태를 확인하지 못했습니다: {statusesQuery.error.message}
+        </StatusBanner>
+      ) : null}
+
+      {statusesQuery.isFetching && !statusesQuery.isLoading ? (
+        <p className={styles.refreshing}>연결 상태 새로고침 중…</p>
+      ) : null}
+
       <div className={styles.list} role="listbox" aria-label="현장 목록">
-        {venues?.map((venue) => (
-          <button
-            key={venue.id}
-            type="button"
-            role="option"
-            aria-selected={selectedId === venue.id}
-            className={[
-              styles.venueItem,
-              selectedId === venue.id ? styles.venueItemSelected : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => selectVenue(venue.id)}
-          >
-            <span className={styles.venueName}>{venue.name}</span>
-            {venue.description ? (
-              <span className={styles.venueDesc}>{venue.description}</span>
-            ) : null}
-          </button>
-        ))}
+        {venues?.map((venue) => {
+          const status = statusMap.get(venue.id);
+          const isConnected = status?.connected ?? false;
+          const statusLabel = isConnected ? '온라인' : '오프라인';
+          const statusTone = isConnected ? styles.statusOnline : styles.statusOffline;
+          const checkedAt = status?.checked_at
+            ? new Date(status.checked_at).toLocaleTimeString('ko-KR')
+            : '-';
+
+          return (
+            <button
+              key={venue.id}
+              type="button"
+              role="option"
+              aria-selected={selectedId === venue.id}
+              className={[
+                styles.venueItem,
+                selectedId === venue.id ? styles.venueItemSelected : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => selectVenue(venue.id)}
+            >
+              <div className={styles.venueTopRow}>
+                <span className={styles.venueName}>{venue.name}</span>
+                <span className={[styles.statusBadge, statusTone].join(' ')}>
+                  {statusLabel}
+                </span>
+              </div>
+              {venue.description ? (
+                <span className={styles.venueDesc}>{venue.description}</span>
+              ) : null}
+              <div className={styles.venueMeta}>
+                <span>venue_id: {venue.id}</span>
+                <span>status: {status?.status_code ?? '-'}</span>
+                <span>checked_at: {checkedAt}</span>
+              </div>
+              {status?.message ? (
+                <span className={styles.venueMessage}>{status.message}</span>
+              ) : null}
+            </button>
+          );
+        })}
       </div>
 
       <div className={styles.actions}>
         <Button
           fullWidth
-          disabled={!selectedId || probe.isFetching}
-          onClick={handleProbe}
+          disabled={!canEnter}
+          onClick={handleEnter}
         >
-          {probe.isFetching ? '확인 중…' : 'PC 연결 확인'}
+          홈으로 진입
         </Button>
       </div>
 
-      {probeEnabled && probe.data && !probe.data.agent_reachable ? (
+      {selectedId && !canEnter ? (
         <StatusBanner tone="warning">
-          ProPresenter에 연결되지 않았습니다.
-          {probe.data.message ? ` ${probe.data.message}` : ''}
-          <br />
-          현장 PC에서 ProPresenter 실행·pp_port·Tailscale을 확인하세요.
+          선택한 현장이 현재 연결 불가 상태입니다. 온라인 상태 venue를 선택해 주세요.
         </StatusBanner>
-      ) : null}
-
-      {probeEnabled && probe.error ? (
-        <StatusBanner tone="error">{probe.error.message}</StatusBanner>
-      ) : null}
-
-      {probeEnabled && probe.data?.agent_reachable ? (
-        <StatusBanner tone="success">연결됨 — 홈으로 이동 중…</StatusBanner>
       ) : null}
     </Card>
   );

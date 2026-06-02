@@ -1,8 +1,11 @@
 export const queryKeys = {
   venues: ['venues'] as const,
+  venueStatuses: ['venues', 'status'] as const,
   venueProbe: (venueId: string) => ['venues', venueId, 'probe'] as const,
   venuePresentations: (venueId: string) =>
     ['venues', venueId, 'presentations'] as const,
+  currentPresentation: (venueId: string) =>
+    ['venues', venueId, 'presentation', 'current'] as const,
   worshipBuild: (venueId: string, text: string) =>
     ['worship', 'build', venueId, text] as const,
   songJob: (jobId: string) => ['song-analyze-job', jobId] as const,

@@ -1,6 +1,6 @@
 export { ApiError, apiFetch, getApiBaseUrl, getApiKey, isMockMode } from './client';
-export { fetchVenues, probeVenue } from './venues';
-export { fetchVenuePresentations } from './presentations';
+export { fetchVenues, fetchVenueStatuses, probeVenue } from './venues';
+export { fetchCurrentPresentation, fetchVenuePresentations } from './presentations';
 export { buildWorship, triggerSlide } from './worship';
 export { analyzeSong, buildSong, getSongJob } from './song';
 export { fetchSongs, fetchSong, updateSongSections } from './songs';
@@ -34,6 +34,8 @@ export type {
   SongSectionType,
   UpdateSongSectionsRequest,
   Venue,
+  VenueStatus,
+  VenueStatusResponse,
   VenuePresentationsResponse,
   VenueProbe,
   WorshipBuildRequest,

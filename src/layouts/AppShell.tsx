@@ -4,7 +4,6 @@ import { useVenues } from '@/hooks';
 import styles from './AppShell.module.css';
 
 const tabs = [
-  { to: '/', label: '연결', icon: '🔗', end: true },
   { to: '/home', label: '홈', icon: '🏠', end: true },
   { to: '/worship/build', label: '구절', icon: '📝', end: false },
   { to: '/worship/song', label: '찬양', icon: '🎵', end: false },

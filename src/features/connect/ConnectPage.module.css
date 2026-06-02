@@ -1,3 +1,9 @@
+.refreshing {
+  margin: 0 0 var(--space-sm);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -33,6 +39,52 @@
 
 .venueDesc {
   font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.venueTopRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.statusOnline {
+  color: #0b7a3e;
+  background: #e8fff2;
+  border-color: #9ae2bb;
+}
+
+.statusOffline {
+  color: #8f2b2b;
+  background: #fff1f1;
+  border-color: #f2b3b3;
+}
+
+.venueMeta {
+  margin-top: var(--space-xs);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.venueMessage {
+  margin-top: 2px;
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
 }
 
