@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState, type ClipboardEvent } from 'react';
 import { Button, StatusBanner } from '@/components';
 import styles from './SongUploadPage.module.css';
 
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PASTED_IMAGE_LABEL = '클립보드에서 붙여넣음';
 
 export type SongInputMode = 'lyrics' | 'image';
 
@@ -48,7 +49,36 @@ async function readImageFile(
   });
 }
 
+function getImageFileFromClipboard(clipboardData: DataTransfer): File | null {
+  for (const item of clipboardData.items) {
+    if (item.kind !== 'file' || !item.type.startsWith('image/')) {
+      continue;
+    }
+    const file = item.getAsFile();
+    if (!file) {
+      continue;
+    }
+    if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      return file;
+    }
+    if (!file.type) {
+      return new File([file], 'pasted-image.png', { type: 'image/png' });
+    }
+    return file;
+  }
+  return null;
+}
+
+function clipboardHasNonImageContent(clipboardData: DataTransfer): boolean {
+  return [...clipboardData.items].some(
+    (item) =>
+      (item.kind === 'string' && item.type === 'text/plain') ||
+      (item.kind === 'file' && item.type !== '' && !item.type.startsWith('image/')),
+  );
+}
+
 export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPageProps) {
+  const pasteZoneRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<SongInputMode>('lyrics');
   const [songTitle, setSongTitle] = useState('');
   const [lyricsText, setLyricsText] = useState('');
@@ -59,7 +89,10 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
   } | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  async function handleImageChange(file: File | undefined) {
+  async function handleImageChange(
+    file: File | undefined,
+    displayName?: string,
+  ) {
     setLocalError(null);
     if (!file) {
       setImageName(null);
@@ -68,13 +101,29 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
     }
     try {
       const data = await readImageFile(file);
-      setImageName(file.name);
+      setImageName(displayName ?? file.name);
       setImageData(data);
     } catch (err) {
       setImageName(null);
       setImageData(null);
       setLocalError(err instanceof Error ? err.message : '이미지 오류');
     }
+  }
+
+  function handleImagePaste(e: ClipboardEvent<HTMLDivElement>) {
+    if (disabled) {
+      return;
+    }
+    const file = getImageFileFromClipboard(e.clipboardData);
+    if (!file) {
+      if (clipboardHasNonImageContent(e.clipboardData)) {
+        e.preventDefault();
+        setLocalError('이미지를 붙여넣으세요.');
+      }
+      return;
+    }
+    e.preventDefault();
+    void handleImageChange(file, PASTED_IMAGE_LABEL);
   }
 
   function handleSubmit() {
@@ -96,7 +145,7 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
     }
 
     if (!imageData) {
-      setLocalError('악보 이미지를 선택하세요.');
+      setLocalError('악보 이미지를 선택하거나 붙여넣으세요.');
       return;
     }
     onSubmit({
@@ -165,20 +214,43 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
           />
         </label>
       ) : (
-        <label className={styles.field} htmlFor="song-image">
-          <span className={styles.label}>악보 이미지 (JPEG·PNG·WebP, ~4MB)</span>
-          <input
-            id="song-image"
-            type="file"
-            accept={ACCEPTED_IMAGE_TYPES.join(',')}
-            className={styles.fileInput}
-            disabled={disabled}
-            onChange={(e) => void handleImageChange(e.target.files?.[0])}
-          />
-          {imageName ? (
-            <p className={styles.fileName}>{imageName}</p>
-          ) : null}
-        </label>
+        <div className={styles.field}>
+          <span className={styles.label} id="song-image-label">
+            악보 이미지 (JPEG·PNG·WebP, ~4MB)
+          </span>
+          <div
+            ref={pasteZoneRef}
+            className={styles.pasteZone}
+            tabIndex={disabled ? -1 : 0}
+            role="group"
+            aria-labelledby="song-image-label"
+            aria-describedby="song-image-hint"
+            onPaste={handleImagePaste}
+            onClick={() => pasteZoneRef.current?.focus()}
+          >
+            <p id="song-image-hint" className={styles.pasteHint}>
+              악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요.
+            </p>
+            <input
+              id="song-image"
+              type="file"
+              accept={ACCEPTED_IMAGE_TYPES.join(',')}
+              className={styles.fileInput}
+              disabled={disabled}
+              onChange={(e) => void handleImageChange(e.target.files?.[0])}
+            />
+            {imageData ? (
+              <img
+                className={styles.preview}
+                src={`data:${imageData.mimeType};base64,${imageData.base64}`}
+                alt="악보 미리보기"
+              />
+            ) : null}
+            {imageName ? (
+              <p className={styles.fileName}>{imageName}</p>
+            ) : null}
+          </div>
+        </div>
       )}
 
       <p className={styles.hint}>
