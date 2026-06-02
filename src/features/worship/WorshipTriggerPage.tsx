@@ -1,13 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, SlideGrid, StatusBanner } from '@/components';
-import { useBuildWorship, useTriggerSlide, useWorshipBuildCache } from '@/hooks';
+import {
+  useBuildWorship,
+  useTriggerSlide,
+  useVenueProbe,
+  useVenueStatuses,
+  useWorshipBuildCache,
+} from '@/hooks';
 import { getSelectedVenueId, getVerseText } from '@/lib/session';
 
 export function WorshipTriggerPage() {
   const navigate = useNavigate();
   const venueId = getSelectedVenueId();
   const verseText = getVerseText();
+  const statuses = useVenueStatuses();
+  const probe = useVenueProbe(venueId, Boolean(venueId));
   const build = useBuildWorship(venueId);
   const trigger = useTriggerSlide(venueId);
 
@@ -18,9 +26,17 @@ export function WorshipTriggerPage() {
 
   const cached = useWorshipBuildCache(venueId, verseText);
   const slideMap = build.data?.slide_map ?? cached?.slide_map;
+  const venueStatus = venueId
+    ? statuses.data?.find((status) => status.venue_id === venueId)
+    : undefined;
+  const connected = venueStatus?.connected === true;
+  const connectedChecked = statuses.isSuccess || statuses.isError;
+  const agentReady = probe.data?.agent_reachable === true;
+  const agentChecked = probe.isSuccess || probe.isError;
+  const canOperate = connected && agentReady;
 
   function handleTrigger(index: number) {
-    if (!venueId || trigger.isPending) return;
+    if (!venueId || trigger.isPending || !canOperate) return;
 
     setStatusMessage(null);
     trigger.mutate(index, {
@@ -58,7 +74,7 @@ export function WorshipTriggerPage() {
         </StatusBanner>
         <Button
           fullWidth
-          disabled={!verseText || build.isPending}
+          disabled={!verseText || build.isPending || !canOperate}
           onClick={() => {
             if (verseText) build.mutate(verseText);
           }}
@@ -83,6 +99,22 @@ export function WorshipTriggerPage() {
         </StatusBanner>
       ) : null}
 
+      {connectedChecked && !connected ? (
+        <StatusBanner tone="warning">
+          ProPresenter 연결이 끊겨 있어 송출이 비활성화됩니다.
+          {venueStatus?.message ? ` ${venueStatus.message}` : ''}
+        </StatusBanner>
+      ) : null}
+
+      {connected && agentChecked && !agentReady ? (
+        <StatusBanner tone="warning">
+          에이전트 상태 문제로 송출이 비활성화됩니다.
+          {probe.data?.agent_message ?? probe.data?.message
+            ? ` ${probe.data?.agent_message ?? probe.data?.message}`
+            : ''}
+        </StatusBanner>
+      ) : null}
+
       {trigger.error && !statusMessage ? (
         <StatusBanner tone="error">{trigger.error.message}</StatusBanner>
       ) : null}
@@ -90,7 +122,7 @@ export function WorshipTriggerPage() {
       <SlideGrid
         slides={slideMap}
         onTrigger={handleTrigger}
-        disabled={trigger.isPending}
+        disabled={trigger.isPending || !canOperate}
         pendingIndex={trigger.isPending ? trigger.variables ?? null : null}
         activeIndex={lastTriggeredIndex}
       />

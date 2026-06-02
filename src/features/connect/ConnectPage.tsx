@@ -32,6 +32,7 @@ export function ConnectPage() {
 
   const selectedStatus = selectedId ? statusMap.get(selectedId) : undefined;
   const canEnter = Boolean(selectedId && selectedStatus?.connected);
+  const selectedAgentReachable = selectedStatus?.agent_reachable;
 
   if (isLoading) return <Spinner centered />;
   if (error) {
@@ -116,6 +117,13 @@ export function ConnectPage() {
       {selectedId && !canEnter ? (
         <StatusBanner tone="warning">
           선택한 현장이 현재 연결 불가 상태입니다. 온라인 상태 venue를 선택해 주세요.
+        </StatusBanner>
+      ) : null}
+
+      {selectedId && canEnter && selectedAgentReachable === false ? (
+        <StatusBanner tone="warning">
+          ProPresenter 연결은 확인되었지만 에이전트 상태에 문제가 있습니다.
+          {selectedStatus?.agent_message ? ` ${selectedStatus.agent_message}` : ''}
         </StatusBanner>
       ) : null}
     </Card>

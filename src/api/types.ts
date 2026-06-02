@@ -9,6 +9,9 @@ export interface VenueProbe {
   venue_id: string;
   online: boolean;
   agent_reachable: boolean;
+  agent_status_code?: string;
+  agent_message?: string;
+  agent_health_url?: string;
   message?: string;
 }
 
@@ -18,6 +21,9 @@ export interface VenueProbeApiResponse {
   ok?: boolean;
   online?: boolean;
   agent_reachable?: boolean;
+  agent_status_code?: string;
+  agent_message?: string;
+  agent_health_url?: string;
   url?: string;
   status_code?: number;
   hint?: string | null;
@@ -28,6 +34,10 @@ export interface VenueProbeApiResponse {
 export interface VenueStatus {
   venue_id: string;
   connected: boolean;
+  agent_reachable?: boolean;
+  agent_status_code?: string;
+  agent_message?: string;
+  agent_health_url?: string;
   status_code?: number;
   message?: string;
   checked_at?: string;

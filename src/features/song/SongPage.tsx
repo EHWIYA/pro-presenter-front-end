@@ -9,6 +9,7 @@ import {
   useTriggerSlide,
   useUpdateSongSections,
   useVenueProbe,
+  useVenueStatuses,
 } from '@/hooks';
 import { getSelectedVenueId } from '@/lib/session';
 import { SongBuildResult } from './SongBuildResult';
@@ -25,6 +26,7 @@ export function SongPage() {
   const navigate = useNavigate();
   const venueId = getSelectedVenueId();
   const probe = useVenueProbe(venueId, Boolean(venueId));
+  const statuses = useVenueStatuses();
   const analyze = useSongAnalyze();
   const build = useBuildSong();
   const trigger = useTriggerSlide(venueId);
@@ -47,10 +49,16 @@ export function SongPage() {
   const [reanalyzeConfirmOpen, setReanalyzeConfirmOpen] = useState(false);
   const [loadingSong, setLoadingSong] = useState(false);
 
+  const venueStatus = venueId
+    ? statuses.data?.find((status) => status.venue_id === venueId)
+    : undefined;
+  const connected = venueStatus?.connected === true;
+  const connectedChecked = statuses.isSuccess || statuses.isError;
   const agentReady = probe.data?.agent_reachable === true;
-  const probeChecked = probe.isSuccess || probe.isError;
+  const agentChecked = probe.isSuccess || probe.isError;
+  const operationalReady = connected && agentReady;
   const actionsDisabled =
-    !agentReady ||
+    !operationalReady ||
     build.isPending ||
     analyze.isPolling ||
     analyze.start.isPending ||
@@ -153,7 +161,7 @@ export function SongPage() {
   }
 
   function handleBuild() {
-    if (!venueId || build.isPending || !agentReady) return;
+    if (!venueId || build.isPending || !operationalReady) return;
     if (buildMode === 'replace') {
       const ok = window.confirm(
         'worship-2 프레젠테이션 전체를 교체합니다. 계속할까요?',
@@ -175,7 +183,7 @@ export function SongPage() {
   }
 
   function handleTrigger(index: number) {
-    if (!venueId || trigger.isPending || !agentReady) return;
+    if (!venueId || trigger.isPending || !operationalReady) return;
     setPendingIndex(index);
     setStatusMessage(null);
     trigger.mutate(index, {
@@ -236,10 +244,19 @@ export function SongPage() {
 
   return (
     <Card title="찬양" subtitle={subtitle}>
-      {probeChecked && !agentReady ? (
+      {connectedChecked && !connected ? (
         <StatusBanner tone="warning">
-          ProPresenter에 연결되지 않았습니다. 빌드·송출이 비활성화됩니다.
-          {probe.data?.message ? ` ${probe.data.message}` : ''}
+          ProPresenter 연결이 끊겨 있습니다. 빌드·송출이 비활성화됩니다.
+          {venueStatus?.message ? ` ${venueStatus.message}` : ''}
+        </StatusBanner>
+      ) : null}
+
+      {connected && agentChecked && !agentReady ? (
+        <StatusBanner tone="warning">
+          에이전트 상태 문제로 빌드·송출이 비활성화됩니다.
+          {probe.data?.agent_message ?? probe.data?.message
+            ? ` ${probe.data?.agent_message ?? probe.data?.message}`
+            : ''}
         </StatusBanner>
       ) : null}
 
@@ -373,7 +390,7 @@ export function SongPage() {
           buildPending={build.isPending}
           buildError={build.error}
           triggerPending={trigger.isPending}
-          triggerDisabled={!agentReady || !build.data?.ok}
+          triggerDisabled={!operationalReady || !build.data?.ok}
           pendingIndex={pendingIndex}
           activeIndex={activeIndex}
           statusMessage={statusMessage}

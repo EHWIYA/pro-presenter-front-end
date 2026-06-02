@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, SlideGrid, Spinner, StatusBanner } from '@/components';
-import { useBuildWorship, useWorshipBuildCache } from '@/hooks';
+import { useBuildWorship, useVenueProbe, useVenueStatuses, useWorshipBuildCache } from '@/hooks';
 import { getSelectedVenueId, getVerseText, setVerseText } from '@/lib/session';
 import styles from './WorshipBuildPage.module.css';
 
@@ -9,13 +9,23 @@ export function WorshipBuildPage() {
   const navigate = useNavigate();
   const venueId = getSelectedVenueId();
   const [text, setText] = useState(getVerseText);
+  const statuses = useVenueStatuses();
+  const probe = useVenueProbe(venueId, Boolean(venueId));
   const build = useBuildWorship(venueId);
   const cached = useWorshipBuildCache(venueId, text);
 
   const slideMap = build.data?.slide_map ?? cached?.slide_map;
+  const venueStatus = venueId
+    ? statuses.data?.find((status) => status.venue_id === venueId)
+    : undefined;
+  const connected = venueStatus?.connected === true;
+  const connectedChecked = statuses.isSuccess || statuses.isError;
+  const agentReady = probe.data?.agent_reachable === true;
+  const agentChecked = probe.isSuccess || probe.isError;
+  const canBuild = connected && agentReady;
 
   function handleBuild() {
-    if (!venueId || build.isPending) return;
+    if (!venueId || build.isPending || !canBuild) return;
     if (!text.trim()) return;
     setVerseText(text);
     build.mutate(text);
@@ -49,11 +59,26 @@ export function WorshipBuildPage() {
         disabled={build.isPending}
       />
       <p className={styles.hint}>
-        빌드·송출은 현장 에이전트(8787)가 떠 있어야 합니다. probe는 ProPresenter 연결만
-        확인합니다.
+        빌드는 ProPresenter 연결 + 현장 에이전트(8787) 정상일 때만 가능합니다.
       </p>
 
-      <Button fullWidth disabled={build.isPending || !text.trim()} onClick={handleBuild}>
+      {connectedChecked && !connected ? (
+        <StatusBanner tone="warning">
+          ProPresenter 연결이 끊겨 있어 빌드가 비활성화됩니다.
+          {venueStatus?.message ? ` ${venueStatus.message}` : ''}
+        </StatusBanner>
+      ) : null}
+
+      {connected && agentChecked && !agentReady ? (
+        <StatusBanner tone="warning">
+          에이전트 상태 문제로 빌드가 비활성화됩니다.
+          {probe.data?.agent_message ?? probe.data?.message
+            ? ` ${probe.data?.agent_message ?? probe.data?.message}`
+            : ''}
+        </StatusBanner>
+      ) : null}
+
+      <Button fullWidth disabled={build.isPending || !text.trim() || !canBuild} onClick={handleBuild}>
         {build.isPending ? '빌드 중…' : '빌드'}
       </Button>
 

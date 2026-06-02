@@ -111,6 +111,10 @@ export async function mockFetchVenueStatuses(): Promise<VenueStatusResponse> {
       {
         venue_id: 'test',
         connected: true,
+        agent_reachable: true,
+        agent_status_code: 'ok',
+        agent_message: 'agent reachable',
+        agent_health_url: 'http://127.0.0.1:8787/health',
         status_code: 200,
         message: 'connected',
         checked_at: checkedAt,
@@ -118,6 +122,10 @@ export async function mockFetchVenueStatuses(): Promise<VenueStatusResponse> {
       {
         venue_id: 'main-hall',
         connected: false,
+        agent_reachable: false,
+        agent_status_code: 'timeout',
+        agent_message: 'agent unreachable',
+        agent_health_url: 'http://127.0.0.1:8787/health',
         status_code: 504,
         message: 'timeout',
         checked_at: checkedAt,

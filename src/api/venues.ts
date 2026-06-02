@@ -11,7 +11,7 @@ import type {
 function normalizeVenueProbe(data: VenueProbeApiResponse): VenueProbe {
   const reachable =
     data.agent_reachable ?? data.ok ?? data.online ?? false;
-  const message =
+  const fallbackMessage =
     data.message ??
     data.hint ??
     (data.status_code != null ? `HTTP ${data.status_code}` : undefined) ??
@@ -21,7 +21,10 @@ function normalizeVenueProbe(data: VenueProbeApiResponse): VenueProbe {
     venue_id: data.venue_id,
     online: data.online ?? reachable,
     agent_reachable: reachable,
-    message,
+    agent_status_code: toStringOrUndefined(data.agent_status_code),
+    agent_message: toStringOrUndefined(data.agent_message),
+    agent_health_url: toStringOrUndefined(data.agent_health_url),
+    message: fallbackMessage,
   };
 }
 
@@ -92,11 +95,12 @@ function normalizeStatusItem(raw: unknown): VenueStatus | null {
 
   return {
     venue_id: venueId,
-    connected:
-      toBool(item.connected) ||
-      toBool(item.online) ||
-      toBool(item.agent_reachable) ||
-      toBool(item.ok),
+    connected: toBool(item.connected) || toBool(item.online),
+    agent_reachable:
+      item.agent_reachable == null ? undefined : toBool(item.agent_reachable),
+    agent_status_code: toStringOrUndefined(item.agent_status_code),
+    agent_message: toStringOrUndefined(item.agent_message),
+    agent_health_url: toStringOrUndefined(item.agent_health_url),
     status_code: toNumber(item.status_code ?? item.statusCode ?? item.code),
     message: toStringOrUndefined(item.message ?? item.detail),
     checked_at: toStringOrUndefined(item.checked_at ?? item.checkedAt ?? item.timestamp),
