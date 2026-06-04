@@ -153,8 +153,11 @@ export function SongPage() {
 
   function handleAnalyze(payload: SongUploadPayload) {
     if (isAnalyzing) return;
+    const title = payload.songTitle.trim();
+    if (!title) return;
+
     setLastUploadPayload(payload);
-    setSongTitle('');
+    setSongTitle(title);
     setSections([]);
     setWarnings([]);
     setSongId(null);
@@ -166,6 +169,7 @@ export function SongPage() {
     setStatusMessage(null);
 
     const body: SongAnalyzeRequest = {
+      songTitle: title,
       imageBase64: payload.imageBase64,
       imageMimeType: payload.imageMimeType,
       saveToLibrary: false,
@@ -175,16 +179,24 @@ export function SongPage() {
 
   function handleForceReanalyze() {
     if (!lastUploadPayload) return;
+    const title = songTitle.trim();
+    if (!title) {
+      setSaveMessage('곡 제목을 입력한 뒤 분석해 주세요.');
+      setReanalyzeConfirmOpen(false);
+      return;
+    }
     setReanalyzeConfirmOpen(false);
     setIsDraftSession(true);
     setSaveMessage(null);
     setStep('analyzing');
     analyze.reset();
     analyze.start.mutate({
+      songTitle: title,
       imageBase64: lastUploadPayload.imageBase64,
       imageMimeType: lastUploadPayload.imageMimeType,
       forceReanalyze: true,
       saveToLibrary: false,
+      librarySongId: songId ?? undefined,
     });
   }
 
@@ -521,7 +533,7 @@ export function SongPage() {
             disabled={actionsDisabled}
             onTitleChange={setSongTitle}
             onReanalyze={
-              isDraftSession && lastUploadPayload
+              isDraftSession && lastUploadPayload && songTitle.trim()
                 ? () => setReanalyzeConfirmOpen(true)
                 : undefined
             }
@@ -590,7 +602,11 @@ export function SongPage() {
               반영되지 않습니다. 계속할까요?
             </p>
             <div className={styles.modalActions}>
-              <Button fullWidth onClick={handleForceReanalyze}>
+              <Button
+                fullWidth
+                disabled={!songTitle.trim()}
+                onClick={handleForceReanalyze}
+              >
                 재분석 시작
               </Button>
               <Button

@@ -1,4 +1,6 @@
 import { ApiError, apiFetch, assertApiKeyConfigured, getApiBaseUrl, getApiKey, isMockMode } from './client';
+import { formatSongAnalyzeError } from './songAnalyzeError';
+import type { ApiErrorBody } from './types';
 import {
   mockAnalyzeSong,
   mockBuildSong,
@@ -38,17 +40,14 @@ export async function analyzeSong(
   });
 
   if (!response.ok) {
-    let message = response.statusText;
+    let body: ApiErrorBody | undefined;
     try {
-      const errBody = (await response.json()) as {
-        detail?: string;
-        message?: string;
-      };
-      message = errBody.detail ?? errBody.message ?? message;
+      body = (await response.json()) as ApiErrorBody;
     } catch {
-      /* ignore */
+      body = undefined;
     }
-    throw new ApiError(response.status, message || '분석 요청 실패');
+    const message = formatSongAnalyzeError(body);
+    throw new ApiError(response.status, message, body);
   }
 
   const data = (await response.json()) as Record<string, unknown>;

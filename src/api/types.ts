@@ -102,8 +102,15 @@ export interface CurrentPresentationPreview {
   preview_text?: string;
 }
 
+export type ApiValidationDetail = {
+  type?: string;
+  loc?: (string | number)[];
+  msg?: string;
+  input?: unknown;
+};
+
 export interface ApiErrorBody {
-  detail?: string;
+  detail?: string | ApiValidationDetail[];
   message?: string;
 }
 
@@ -125,8 +132,8 @@ export interface SongSection {
 }
 
 export interface SongAnalyzeRequest {
-  /** 생략 시 서버·AI가 악보 이미지에서 추출 */
-  songTitle?: string;
+  /** BFF 필수 — 빈 문자열이면 422 */
+  songTitle: string;
   imageBase64?: string;
   imageMimeType?: string;
   lyricsText?: string;

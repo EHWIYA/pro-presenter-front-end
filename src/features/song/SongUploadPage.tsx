@@ -7,6 +7,7 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PASTED_IMAGE_LABEL = '클립보드에서 붙여넣음';
 
 export interface SongUploadPayload {
+  songTitle: string;
   imageBase64: string;
   imageMimeType: string;
 }
@@ -75,6 +76,7 @@ function clipboardHasNonImageContent(clipboardData: DataTransfer): boolean {
 
 export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPageProps) {
   const pasteZoneRef = useRef<HTMLDivElement>(null);
+  const [songTitle, setSongTitle] = useState('');
   const [imageName, setImageName] = useState<string | null>(null);
   const [imageData, setImageData] = useState<{
     base64: string;
@@ -122,20 +124,43 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
   function handleSubmit() {
     setLocalError(null);
 
+    const title = songTitle.trim();
+    if (!title) {
+      setLocalError('곡 제목을 입력한 뒤 분석해 주세요.');
+      return;
+    }
     if (!imageData) {
       setLocalError('악보 이미지를 선택하거나 붙여넣으세요.');
       return;
     }
     onSubmit({
+      songTitle: title,
       imageBase64: imageData.base64,
       imageMimeType: imageData.mimeType,
     });
   }
 
-  const canSubmit = !disabled && Boolean(imageData);
+  const canSubmit =
+    !disabled && Boolean(songTitle.trim()) && Boolean(imageData);
 
   return (
     <div className={styles.root}>
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="song-upload-title">
+          곡 제목
+        </label>
+        <input
+          id="song-upload-title"
+          className={styles.textInput}
+          type="text"
+          value={songTitle}
+          onChange={(e) => setSongTitle(e.target.value)}
+          placeholder="예: 오늘 집을 나서기 전"
+          disabled={disabled}
+          autoComplete="off"
+        />
+      </div>
+
       <div className={styles.field}>
         <span className={styles.label} id="song-image-label">
           악보 이미지 (JPEG·PNG·WebP, ~4MB)
@@ -151,8 +176,8 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
           onClick={() => pasteZoneRef.current?.focus()}
         >
           <p id="song-image-hint" className={styles.pasteHint}>
-            악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요. 곡 제목은 AI가
-            악보에서 추출합니다.
+            악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요. 제목은 분석
+            요청에 함께 전달되며, AI가 악보에서 보정할 수 있습니다.
           </p>
           <input
             id="song-image"

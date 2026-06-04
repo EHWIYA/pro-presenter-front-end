@@ -352,7 +352,15 @@ export async function mockAnalyzeSong(
   body: SongAnalyzeRequest,
 ): Promise<AnalyzeResponse> {
   await delay(300);
-  const title = body.songTitle?.trim() ?? '';
+  const title = body.songTitle.trim();
+  if (!title) {
+    throw new Error('곡 제목을 입력한 뒤 분석해 주세요.');
+  }
+  const hasImage = Boolean(body.imageBase64 && body.imageMimeType);
+  const hasLyrics = Boolean(body.lyricsText?.trim());
+  if (hasImage === hasLyrics) {
+    throw new Error('악보 이미지 또는 가사 중 하나만 넣어 주세요.');
+  }
 
   if (!body.forceReanalyze && title === '주님의 마음') {
     const song = MOCK_LIBRARY_SONGS[0];
@@ -403,7 +411,7 @@ export async function mockGetSongJob(jobId: string): Promise<SongJobResponse> {
   const { request } = entry;
   const lyrics = request.lyricsText ?? '1절\n첫 줄\n둘째 줄\n\n후렴\n할렐루야';
   const extractedTitle =
-    request.songTitle?.trim() ||
+    request.songTitle.trim() ||
     (request.imageBase64 ? '악보에서 추출한 곡 (데모)' : '제목 미확인');
   const persist = request.saveToLibrary === true;
   const mockSongId = '770e8400-e29b-41d4-a716-446655440002';

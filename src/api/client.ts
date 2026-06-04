@@ -1,3 +1,4 @@
+import { formatApiErrorMessage } from './songAnalyzeError';
 import type { ApiErrorBody } from './types';
 
 const useMock = import.meta.env.VITE_USE_MOCK === 'true';
@@ -67,8 +68,10 @@ export async function apiFetch<T>(
     } catch {
       body = undefined;
     }
-    const message =
-      body?.detail ?? body?.message ?? response.statusText ?? 'Request failed';
+    const message = formatApiErrorMessage(
+      body,
+      response.statusText || 'Request failed',
+    );
     throw new ApiError(response.status, message, body);
   }
 
