@@ -14,13 +14,15 @@ import {
 import { getSelectedVenueId } from '@/lib/session';
 import { SongBuildResult } from './SongBuildResult';
 import { SongCandidatesList } from './SongCandidatesList';
+import { SongDetailView } from './SongDetailView';
 import { SongLibraryPanel } from './SongLibraryPanel';
 import { SongSectionsEditor } from './SongSectionsEditor';
 import { SongUploadPage, type SongUploadPayload } from './SongUploadPage';
 import styles from './SongPage.module.css';
 
 type MainTab = 'library' | 'upload';
-type SongStep = 'input' | 'candidates' | 'edit' | 'build';
+type SongStep = 'input' | 'candidates' | 'detail' | 'edit' | 'build';
+type DetailReturnStep = 'input' | 'candidates';
 
 export function SongPage() {
   const navigate = useNavigate();
@@ -48,6 +50,8 @@ export function SongPage() {
     useState<SongUploadPayload | null>(null);
   const [reanalyzeConfirmOpen, setReanalyzeConfirmOpen] = useState(false);
   const [loadingSong, setLoadingSong] = useState(false);
+  const [detailReturnStep, setDetailReturnStep] =
+    useState<DetailReturnStep>('input');
 
   const venueStatus = venueId
     ? statuses.data?.find((status) => status.venue_id === venueId)
@@ -64,26 +68,31 @@ export function SongPage() {
     analyze.start.isPending ||
     loadingSong;
 
-  const loadSongDetail = useCallback(async (id: string) => {
-    setLoadingSong(true);
-    setSaveMessage(null);
-    try {
-      const detail = await fetchSong(id);
-      setSongId(detail.songId);
-      setSongTitle(detail.title);
-      setSections(detail.sections);
-      setWarnings([]);
-      setFromLibrary(true);
-      setStep('edit');
-      build.reset();
-    } catch (err) {
-      setStatusMessage(
-        err instanceof Error ? err.message : '곡을 불러오지 못했습니다.',
-      );
-    } finally {
-      setLoadingSong(false);
-    }
-  }, [build]);
+  const loadSongDetail = useCallback(
+    async (id: string, returnStep: DetailReturnStep) => {
+      setLoadingSong(true);
+      setSaveMessage(null);
+      setStatusMessage(null);
+      try {
+        const detail = await fetchSong(id);
+        setSongId(detail.songId);
+        setSongTitle(detail.title);
+        setSections(detail.sections);
+        setWarnings([]);
+        setFromLibrary(true);
+        setDetailReturnStep(returnStep);
+        setStep('detail');
+        build.reset();
+      } catch (err) {
+        setStatusMessage(
+          err instanceof Error ? err.message : '곡을 불러오지 못했습니다.',
+        );
+      } finally {
+        setLoadingSong(false);
+      }
+    },
+    [build],
+  );
 
   useEffect(() => {
     if (analyze.libraryHit) {
@@ -92,7 +101,8 @@ export function SongPage() {
       setSections(analyze.libraryHit.sections);
       setWarnings([]);
       setFromLibrary(true);
-      setStep('edit');
+      setDetailReturnStep('input');
+      setStep('detail');
     }
   }, [analyze.libraryHit]);
 
@@ -203,6 +213,20 @@ export function SongPage() {
     });
   }
 
+  function handleDetailBack() {
+    setSaveMessage(null);
+    setStatusMessage(null);
+    setStep(detailReturnStep);
+  }
+
+  function handleEditBack() {
+    if (fromLibrary && songId) {
+      setStep('detail');
+      return;
+    }
+    handleResetFlow();
+  }
+
   function handleResetFlow() {
     analyze.reset();
     build.reset();
@@ -236,9 +260,11 @@ export function SongPage() {
         ? '곡 제목과 가사·악보를 입력한 뒤 분석하세요.'
         : step === 'candidates'
           ? '라이브러리 후보 중 곡을 선택하세요.'
-          : step === 'edit'
-            ? '구간을 검수·편집한 뒤 빌드하세요.'
-            : 'PP 빌드 후 슬라이드를 탭해 송출하세요.';
+          : step === 'detail'
+            ? '저장된 구간과 가사를 확인하세요.'
+            : step === 'edit'
+              ? '구간을 검수·편집한 뒤 빌드하세요.'
+              : 'PP 빌드 후 슬라이드를 탭해 송출하세요.';
 
   const showMainTabs = step === 'input' && !analyze.isPolling;
 
@@ -311,7 +337,7 @@ export function SongPage() {
         <StatusBanner tone="error">{analyze.jobError.message}</StatusBanner>
       ) : null}
 
-      {fromLibrary && step === 'edit' && analyze.libraryHit ? (
+      {fromLibrary && step === 'detail' && analyze.libraryHit ? (
         <StatusBanner tone="success">
           저장된 가사를 불러왔습니다 (AI 분석 생략).
         </StatusBanner>
@@ -335,7 +361,7 @@ export function SongPage() {
       {!analyze.isPolling && !loadingSong && step === 'input' && mainTab === 'library' ? (
         <SongLibraryPanel
           disabled={actionsDisabled}
-          onSelect={(id) => void loadSongDetail(id)}
+          onSelect={(id) => void loadSongDetail(id, 'input')}
         />
       ) : null}
 
@@ -350,8 +376,21 @@ export function SongPage() {
         <SongCandidatesList
           data={analyze.candidates}
           disabled={actionsDisabled}
-          onSelect={(id) => void loadSongDetail(id)}
+          onSelect={(id) => void loadSongDetail(id, 'candidates')}
           onBack={handleResetFlow}
+        />
+      ) : null}
+
+      {!analyze.isPolling && !loadingSong && step === 'detail' ? (
+        <SongDetailView
+          title={songTitle}
+          sections={sections}
+          disabled={actionsDisabled}
+          backLabel={
+            detailReturnStep === 'candidates' ? '후보 목록으로' : '목록으로'
+          }
+          onEdit={() => setStep('edit')}
+          onBack={handleDetailBack}
         />
       ) : null}
 
@@ -377,7 +416,8 @@ export function SongPage() {
             onChange={setSections}
             onSave={handleSaveSections}
             onConfirm={() => setStep('build')}
-            onBack={handleResetFlow}
+            onBack={handleEditBack}
+            backLabel={fromLibrary && songId ? '상세로' : '입력으로'}
           />
         </>
       ) : null}

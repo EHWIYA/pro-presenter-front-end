@@ -42,6 +42,7 @@ interface SongSectionsEditorProps {
   onConfirm: () => void;
   onBack: () => void;
   onSave?: () => void;
+  backLabel?: string;
 }
 
 export function SongSectionsEditor({
@@ -55,6 +56,7 @@ export function SongSectionsEditor({
   onConfirm,
   onBack,
   onSave,
+  backLabel = '입력으로',
 }: SongSectionsEditorProps) {
   const hasInvalid = !allSectionsValid(sections);
 
@@ -189,7 +191,7 @@ export function SongSectionsEditor({
 
       <div className={styles.actions}>
         <Button variant="secondary" fullWidth disabled={disabled} onClick={onBack}>
-          입력으로
+          {backLabel}
         </Button>
         <Button
           fullWidth
