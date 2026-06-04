@@ -1,14 +1,20 @@
 import { NavLink, Outlet } from 'react-router-dom';
+import docTextSvg from 'cupertino-icons-svg/svg/doc_text.svg?raw';
+import musicNoteSvg from 'cupertino-icons-svg/svg/music_note.svg?raw';
+import houseSvg from 'cupertino-icons-svg/svg/house.svg?raw';
+import playCircleSvg from 'cupertino-icons-svg/svg/play_circle.svg?raw';
+import gearSvg from 'cupertino-icons-svg/svg/gear.svg?raw';
+import { CupertinoIcon } from '@/components';
 import { getSelectedVenueId } from '@/lib/session';
 import { useVenues } from '@/hooks';
 import styles from './AppShell.module.css';
 
 const tabs = [
-  { to: '/home', label: '홈', icon: '🏠', end: true },
-  { to: '/worship/build', label: '구절', icon: '📝', end: false },
-  { to: '/worship/song', label: '찬양', icon: '🎵', end: false },
-  { to: '/worship/trigger', label: '송출', icon: '▶', end: false },
-  { to: '/settings', label: '설정', icon: '⚙', end: true },
+  { to: '/worship/build', label: '구절', icon: docTextSvg, end: false },
+  { to: '/worship/song', label: '찬양', icon: musicNoteSvg, end: false },
+  { to: '/home', label: '홈', icon: houseSvg, end: true },
+  { to: '/worship/trigger', label: '송출', icon: playCircleSvg, end: false },
+  { to: '/settings', label: '설정', icon: gearSvg, end: true },
 ] as const;
 
 export function AppShell() {
@@ -42,10 +48,8 @@ export function AppShell() {
                 .join(' ')
             }
           >
-            <span className={styles.navIcon} aria-hidden>
-              {tab.icon}
-            </span>
-            {tab.label}
+            <CupertinoIcon svg={tab.icon} />
+            <span className={styles.navLabel}>{tab.label}</span>
           </NavLink>
         ))}
       </nav>

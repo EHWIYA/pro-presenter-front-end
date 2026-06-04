@@ -56,9 +56,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 0.6875rem;
-  font-weight: 600;
+  gap: 0.1875rem;
   color: var(--color-text-muted);
   text-decoration: none;
   min-height: var(--tap-min);
@@ -68,6 +66,8 @@
   color: var(--color-accent);
 }
 
-.navIcon {
-  font-size: 1.125rem;
+.navLabel {
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.1;
 }

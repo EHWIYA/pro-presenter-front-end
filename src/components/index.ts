@@ -1,3 +1,4 @@
+export { CupertinoIcon } from './CupertinoIcon/CupertinoIcon';
 export { Button } from './Button/Button';
 export { Card } from './Card/Card';
 export { SlideGrid } from './SlideGrid/SlideGrid';
