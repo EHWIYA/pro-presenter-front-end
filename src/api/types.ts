@@ -132,8 +132,8 @@ export interface SongSection {
 }
 
 export interface SongAnalyzeRequest {
-  /** BFF 필수 — 빈 문자열이면 422 */
-  songTitle: string;
+  /** 신규 악보(이미지만)는 생략. 재분석·라이브러리 힌트 시 전송 권장 */
+  songTitle?: string;
   imageBase64?: string;
   imageMimeType?: string;
   lyricsText?: string;

@@ -153,11 +153,8 @@ export function SongPage() {
 
   function handleAnalyze(payload: SongUploadPayload) {
     if (isAnalyzing) return;
-    const title = payload.songTitle.trim();
-    if (!title) return;
 
     setLastUploadPayload(payload);
-    setSongTitle(title);
     setSections([]);
     setWarnings([]);
     setSongId(null);
@@ -169,10 +166,9 @@ export function SongPage() {
     setStatusMessage(null);
 
     const body: SongAnalyzeRequest = {
-      songTitle: title,
       imageBase64: payload.imageBase64,
       imageMimeType: payload.imageMimeType,
-      saveToLibrary: false,
+      saveToLibrary: true,
     };
     analyze.start.mutate(body);
   }
