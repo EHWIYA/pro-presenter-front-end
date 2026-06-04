@@ -125,7 +125,8 @@ export interface SongSection {
 }
 
 export interface SongAnalyzeRequest {
-  songTitle: string;
+  /** 생략 시 서버·AI가 악보 이미지에서 추출 */
+  songTitle?: string;
   imageBase64?: string;
   imageMimeType?: string;
   lyricsText?: string;
@@ -248,5 +249,11 @@ export interface SongDetail {
 }
 
 export interface UpdateSongSectionsRequest {
+  sections: SongSection[];
+  title?: string;
+}
+
+export interface CreateSongRequest {
+  title: string;
   sections: SongSection[];
 }

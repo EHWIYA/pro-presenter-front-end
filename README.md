@@ -41,7 +41,7 @@ npm run build
 1. **연결** — venue 선택 · probe → 성공 시 **홈** 이동
 2. **홈** — 프레젠테이션·그룹·슬라이드 수 목록
 3. **구절** — 성경 구절 입력 → POST build → `slide_map`
-4. **찬양** — analyze → 구간 편집 → build-song → `slide_map` + trigger
+4. **찬양** — 신규·악보: analyze → 검수 → 라이브러리 저장 · 곡 라이브러리: 곡 선택 → build-song → `slide_map` + trigger
 5. **송출** — 구절 flow용 trigger (찬양은 찬양 탭에서 직접 송출)
 
 ## 환경 변수

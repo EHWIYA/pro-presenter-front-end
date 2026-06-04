@@ -10,10 +10,12 @@ export function useUpdateSongSections() {
     mutationFn: ({
       songId,
       sections,
+      title,
     }: {
       songId: string;
       sections: SongSection[];
-    }) => updateSongSections(songId, sections),
+      title?: string;
+    }) => updateSongSections(songId, sections, title),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.song(variables.songId),

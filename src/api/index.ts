@@ -3,7 +3,7 @@ export { fetchVenues, fetchVenueStatuses, probeVenue } from './venues';
 export { fetchCurrentPresentation, fetchVenuePresentations } from './presentations';
 export { buildWorship, triggerSlide } from './worship';
 export { analyzeSong, buildSong, getSongJob } from './song';
-export { fetchSongs, fetchSong, updateSongSections } from './songs';
+export { createSong, fetchSongs, fetchSong, updateSongSections } from './songs';
 export {
   normalizeBuildResponse,
   normalizeSongJob,
@@ -25,6 +25,7 @@ export type {
   SongBuildMode,
   SongBuildRequest,
   SongBuildResponse,
+  CreateSongRequest,
   SongDetail,
   SongJobResponse,
   SongListItem,

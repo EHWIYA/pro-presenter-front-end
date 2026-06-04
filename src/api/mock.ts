@@ -313,22 +313,46 @@ export async function mockFetchSong(songId: string): Promise<SongDetail> {
 export async function mockUpdateSongSections(
   songId: string,
   sections: SongSection[],
+  title?: string,
 ): Promise<void> {
   await delay(300);
   const idx = MOCK_LIBRARY_SONGS.findIndex((s) => s.songId === songId);
   if (idx < 0) throw new Error('곡을 찾을 수 없습니다.');
   MOCK_LIBRARY_SONGS[idx] = {
     ...MOCK_LIBRARY_SONGS[idx],
+    title: title?.trim() || MOCK_LIBRARY_SONGS[idx].title,
     sections: sections.map((s) => ({ ...s, lines: [...s.lines] })),
     updatedAt: new Date().toISOString(),
   };
+}
+
+export async function mockCreateSong(body: {
+  title: string;
+  sections: SongSection[];
+}): Promise<SongDetail> {
+  await delay(300);
+  const title = body.title.trim();
+  if (!title) {
+    throw new Error('곡 제목이 필요합니다.');
+  }
+  const song: SongDetail = {
+    songId: `mock-${Date.now()}`,
+    title,
+    artist: null,
+    tags: [],
+    sections: body.sections.map((s) => ({ ...s, lines: [...s.lines] })),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  MOCK_LIBRARY_SONGS.unshift(song);
+  return { ...song, sections: song.sections.map((s) => ({ ...s, lines: [...s.lines] })) };
 }
 
 export async function mockAnalyzeSong(
   body: SongAnalyzeRequest,
 ): Promise<AnalyzeResponse> {
   await delay(300);
-  const title = body.songTitle.trim();
+  const title = body.songTitle?.trim() ?? '';
 
   if (!body.forceReanalyze && title === '주님의 마음') {
     const song = MOCK_LIBRARY_SONGS[0];
@@ -378,19 +402,23 @@ export async function mockGetSongJob(jobId: string): Promise<SongJobResponse> {
 
   const { request } = entry;
   const lyrics = request.lyricsText ?? '1절\n첫 줄\n둘째 줄\n\n후렴\n할렐루야';
+  const extractedTitle =
+    request.songTitle?.trim() ||
+    (request.imageBase64 ? '악보에서 추출한 곡 (데모)' : '제목 미확인');
+  const persist = request.saveToLibrary === true;
   const mockSongId = '770e8400-e29b-41d4-a716-446655440002';
   return {
     jobId,
     status: 'finished',
     parsed: {
-      song_title: request.songTitle,
-      sections: mockSectionsFromLyrics(lyrics, request.songTitle),
+      song_title: extractedTitle,
+      sections: mockSectionsFromLyrics(lyrics, extractedTitle),
       warnings: request.imageBase64
         ? ['mock: 이미지 분석은 가사 기반 데모 결과입니다.']
         : [],
     },
-    songId: mockSongId,
-    libraryAction: 'created',
+    songId: persist ? mockSongId : undefined,
+    libraryAction: persist ? 'created' : 'skipped',
   };
 }
 

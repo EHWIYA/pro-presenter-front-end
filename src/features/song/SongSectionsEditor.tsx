@@ -1,18 +1,12 @@
+import type { CSSProperties } from 'react';
 import type { SongSection, SongSectionType } from '@/api';
 import { Button, StatusBanner } from '@/components';
+import {
+  SECTION_TYPE_ACCENT,
+  SECTION_TYPE_OPTIONS,
+  sectionTypeLabel,
+} from './sectionTypeMeta';
 import styles from './SongSectionsEditor.module.css';
-
-const SECTION_TYPES: { value: SongSectionType; label: string }[] = [
-  { value: 'intro', label: 'Intro' },
-  { value: 'verse', label: 'Verse' },
-  { value: 'pre_chorus', label: 'Pre-chorus' },
-  { value: 'chorus', label: 'Chorus' },
-  { value: 'bridge', label: 'Bridge' },
-  { value: 'tag', label: 'Tag' },
-  { value: 'outro', label: 'Outro' },
-  { value: 'instrumental', label: 'Instrumental' },
-  { value: 'unknown', label: 'Unknown' },
-];
 
 export function sectionLinesValid(lines: string[]): boolean {
   const nonEmpty = lines.map((l) => l.trim()).filter(Boolean);
@@ -31,6 +25,10 @@ function parseLinesText(text: string): string[] {
     .slice(0, 2);
 }
 
+export function countValidSections(sections: SongSection[]): number {
+  return sections.filter((s) => sectionLinesValid(s.lines)).length;
+}
+
 interface SongSectionsEditorProps {
   sections: SongSection[];
   warnings?: string[];
@@ -39,10 +37,12 @@ interface SongSectionsEditorProps {
   savePending?: boolean;
   saveMessage?: string | null;
   onChange: (sections: SongSection[]) => void;
-  onConfirm: () => void;
   onBack: () => void;
   onSave?: () => void;
+  saveLabel?: string;
   backLabel?: string;
+  /** 라이브러리 저장이 주 액션일 때 true (검수·빌드 분리) */
+  savePrimary?: boolean;
 }
 
 export function SongSectionsEditor({
@@ -53,12 +53,14 @@ export function SongSectionsEditor({
   savePending = false,
   saveMessage = null,
   onChange,
-  onConfirm,
   onBack,
   onSave,
+  saveLabel = '라이브러리에 저장',
   backLabel = '입력으로',
+  savePrimary = true,
 }: SongSectionsEditorProps) {
   const hasInvalid = !allSectionsValid(sections);
+  const validCount = countValidSections(sections);
 
   function updateSection(index: number, patch: Partial<SongSection>) {
     onChange(sections.map((s, i) => (i === index ? { ...s, ...patch } : s)));
@@ -77,64 +79,115 @@ export function SongSectionsEditor({
 
   return (
     <div className={styles.root}>
+      <div className={styles.sectionHead}>
+        <h3 className={styles.sectionTitle}>가사 구간</h3>
+        <p className={styles.sectionSub}>
+          슬라이드당 1~2줄 · {sections.length}개 구간
+        </p>
+      </div>
+
       {warnings.length > 0 ? (
-        <StatusBanner tone="warning">
+        <ul className={styles.warnings} aria-label="분석 참고">
           {warnings.map((w) => (
-            <span key={w} className={styles.warningLine}>
-              {w}
-            </span>
+            <li key={w}>{w}</li>
           ))}
-        </StatusBanner>
+        </ul>
       ) : null}
 
-      <p className={styles.hint}>
-        구간당 1~2줄만 빌드 가능합니다. 초과 줄은 나누거나 줄여 주세요.
-      </p>
-
-      <ul className={styles.list}>
+      <ol className={styles.timeline}>
         {sections.map((section, index) => {
           const lineCount = section.lines.filter((l) => l.trim()).length;
           const invalid = lineCount < 1 || lineCount > 2;
+          const accent = SECTION_TYPE_ACCENT[section.type];
 
           return (
-            <li key={`section-${index}`} className={styles.card}>
-              <div className={styles.row}>
-                <label className={styles.field}>
-                  <span className={styles.fieldLabel}>라벨</span>
+            <li
+              key={`section-${index}`}
+              className={styles.block}
+              style={{ '--section-accent': accent } as CSSProperties}
+            >
+              <div className={styles.blockRail} aria-hidden>
+                <span className={styles.index}>{index + 1}</span>
+              </div>
+
+              <article
+                className={[
+                  styles.card,
+                  invalid ? styles.cardInvalid : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <div className={styles.cardTop}>
+                  <div className={styles.cardMeta}>
+                    <select
+                      className={styles.typeSelect}
+                      value={section.type}
+                      disabled={disabled}
+                      aria-label={`${index + 1}번 구간 유형`}
+                      onChange={(e) =>
+                        updateSection(index, {
+                          type: e.target.value as SongSectionType,
+                        })
+                      }
+                    >
+                      {SECTION_TYPE_OPTIONS.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className={styles.typeHint}>
+                      {sectionTypeLabel(section.type)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.removeBtn}
+                    disabled={disabled || sections.length <= 1}
+                    onClick={() => removeSection(index)}
+                  >
+                    삭제
+                  </button>
+                </div>
+
+                <label className={styles.labelField}>
+                  <span className={styles.fieldLabel}>표시 이름</span>
                   <input
                     className={styles.input}
                     value={section.label}
                     disabled={disabled}
+                    placeholder="1절, 후렴…"
                     onChange={(e) =>
                       updateSection(index, { label: e.target.value })
                     }
                   />
                 </label>
-                <label className={styles.field}>
-                  <span className={styles.fieldLabel}>구간</span>
-                  <select
-                    className={styles.select}
-                    value={section.type}
-                    disabled={disabled}
-                    onChange={(e) =>
-                      updateSection(index, {
-                        type: e.target.value as SongSectionType,
-                      })
-                    }
-                  >
-                    {SECTION_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
 
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>
-                  가사 줄 (1~2줄){invalid ? ' — 줄 수 확인' : ''}
-                </span>
+                <div className={styles.lyricsHead}>
+                  <span className={styles.fieldLabel}>가사 (1~2줄)</span>
+                  <div
+                    className={styles.lineMeter}
+                    aria-label={`${lineCount}줄 입력됨`}
+                  >
+                    <span
+                      className={[
+                        styles.lineDot,
+                        lineCount >= 1 ? styles.lineDotOn : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    />
+                    <span
+                      className={[
+                        styles.lineDot,
+                        lineCount >= 2 ? styles.lineDotOn : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    />
+                  </div>
+                </div>
                 <textarea
                   className={[
                     styles.textarea,
@@ -144,33 +197,34 @@ export function SongSectionsEditor({
                     .join(' ')}
                   value={section.lines.join('\n')}
                   disabled={disabled}
+                  placeholder={'첫 번째 줄\n두 번째 줄 (선택)'}
                   onChange={(e) =>
                     updateSection(index, { lines: parseLinesText(e.target.value) })
                   }
                   rows={2}
                 />
-              </label>
-
-              <Button
-                variant="secondary"
-                fullWidth
-                disabled={disabled || sections.length <= 1}
-                onClick={() => removeSection(index)}
-              >
-                구간 삭제
-              </Button>
+                {invalid ? (
+                  <p className={styles.fieldError}>1~2줄의 가사가 필요합니다.</p>
+                ) : null}
+              </article>
             </li>
           );
         })}
-      </ul>
+      </ol>
 
-      <Button variant="secondary" fullWidth disabled={disabled} onClick={addSection}>
-        구간 추가
-      </Button>
+      <button
+        type="button"
+        className={styles.addBtn}
+        disabled={disabled}
+        onClick={addSection}
+      >
+        + 구간 추가
+      </button>
 
       {hasInvalid ? (
         <StatusBanner tone="error">
-          모든 구간에 1~2줄의 가사가 필요합니다.
+          {validCount}/{sections.length}구간만 준비됐습니다. 모든 구간에 1~2줄
+          가사를 넣어 주세요.
         </StatusBanner>
       ) : null}
 
@@ -178,27 +232,19 @@ export function SongSectionsEditor({
         <StatusBanner tone="info">{saveMessage}</StatusBanner>
       ) : null}
 
-      {canSave && onSave ? (
-        <Button
-          variant="secondary"
-          fullWidth
-          disabled={disabled || savePending || hasInvalid}
-          onClick={onSave}
-        >
-          {savePending ? '저장 중…' : '라이브러리에 저장'}
-        </Button>
-      ) : null}
-
-      <div className={styles.actions}>
+      <div className={styles.actionBar}>
+        {canSave && onSave ? (
+          <Button
+            variant={savePrimary ? undefined : 'secondary'}
+            fullWidth
+            disabled={disabled || savePending || hasInvalid}
+            onClick={onSave}
+          >
+            {savePending ? '저장 중…' : saveLabel}
+          </Button>
+        ) : null}
         <Button variant="secondary" fullWidth disabled={disabled} onClick={onBack}>
           {backLabel}
-        </Button>
-        <Button
-          fullWidth
-          disabled={disabled || hasInvalid}
-          onClick={onConfirm}
-        >
-          검수 완료 · 빌드
         </Button>
       </div>
     </div>

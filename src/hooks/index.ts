@@ -9,4 +9,5 @@ export { useTriggerSlide } from './useTriggerSlide';
 export { useWorshipBuildCache } from './useWorshipBuildCache';
 export { useSongAnalyze } from './useSongAnalyze';
 export { useSongs, useSongDetail, useDebouncedValue } from './useSongs';
+export { useCreateSong } from './useCreateSong';
 export { useUpdateSongSections } from './useUpdateSongSections';

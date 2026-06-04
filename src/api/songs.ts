@@ -1,10 +1,12 @@
 import { apiFetch, isMockMode } from './client';
 import {
+  mockCreateSong,
   mockFetchSong,
   mockFetchSongs,
   mockUpdateSongSections,
 } from './mock';
 import type {
+  CreateSongRequest,
   SongDetail,
   SongListResponse,
   SongSection,
@@ -40,13 +42,24 @@ export async function fetchSong(songId: string): Promise<SongDetail> {
   );
 }
 
+export async function createSong(body: CreateSongRequest): Promise<SongDetail> {
+  if (isMockMode()) {
+    return mockCreateSong(body);
+  }
+  return apiFetch<SongDetail>('/api/v1/songs', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
 export async function updateSongSections(
   songId: string,
   sections: SongSection[],
+  title?: string,
 ): Promise<void> {
-  const body: UpdateSongSectionsRequest = { sections };
+  const body: UpdateSongSectionsRequest = { sections, ...(title ? { title } : {}) };
   if (isMockMode()) {
-    await mockUpdateSongSections(songId, sections);
+    await mockUpdateSongSections(songId, sections, title);
     return;
   }
   await apiFetch<void>(

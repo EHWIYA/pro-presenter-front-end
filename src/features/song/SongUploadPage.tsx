@@ -6,13 +6,9 @@ const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const PASTED_IMAGE_LABEL = '클립보드에서 붙여넣음';
 
-export type SongInputMode = 'lyrics' | 'image';
-
 export interface SongUploadPayload {
-  songTitle: string;
-  lyricsText?: string;
-  imageBase64?: string;
-  imageMimeType?: string;
+  imageBase64: string;
+  imageMimeType: string;
 }
 
 interface SongUploadPageProps {
@@ -79,9 +75,6 @@ function clipboardHasNonImageContent(clipboardData: DataTransfer): boolean {
 
 export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPageProps) {
   const pasteZoneRef = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<SongInputMode>('lyrics');
-  const [songTitle, setSongTitle] = useState('');
-  const [lyricsText, setLyricsText] = useState('');
   const [imageName, setImageName] = useState<string | null>(null);
   const [imageData, setImageData] = useState<{
     base64: string;
@@ -128,133 +121,63 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
 
   function handleSubmit() {
     setLocalError(null);
-    const title = songTitle.trim();
-    if (!title) {
-      setLocalError('곡 제목을 입력하세요.');
-      return;
-    }
-
-    if (mode === 'lyrics') {
-      const lyrics = lyricsText.trim();
-      if (!lyrics) {
-        setLocalError('가사를 입력하거나 악보 이미지를 선택하세요.');
-        return;
-      }
-      onSubmit({ songTitle: title, lyricsText: lyrics });
-      return;
-    }
 
     if (!imageData) {
       setLocalError('악보 이미지를 선택하거나 붙여넣으세요.');
       return;
     }
     onSubmit({
-      songTitle: title,
       imageBase64: imageData.base64,
       imageMimeType: imageData.mimeType,
     });
   }
 
-  const canSubmit =
-    !disabled &&
-    songTitle.trim().length > 0 &&
-    (mode === 'lyrics' ? lyricsText.trim().length > 0 : Boolean(imageData));
+  const canSubmit = !disabled && Boolean(imageData);
 
   return (
     <div className={styles.root}>
-      <label className={styles.field} htmlFor="song-title">
-        <span className={styles.label}>곡 제목</span>
-        <input
-          id="song-title"
-          className={styles.input}
-          value={songTitle}
-          onChange={(e) => setSongTitle(e.target.value)}
-          placeholder="주님의 마음"
-          disabled={disabled}
-        />
-      </label>
-
-      <div className={styles.modeTabs} role="tablist" aria-label="입력 방식">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'lyrics'}
-          className={[styles.modeTab, mode === 'lyrics' ? styles.modeTabActive : '']
-            .filter(Boolean)
-            .join(' ')}
-          onClick={() => setMode('lyrics')}
-          disabled={disabled}
+      <div className={styles.field}>
+        <span className={styles.label} id="song-image-label">
+          악보 이미지 (JPEG·PNG·WebP, ~4MB)
+        </span>
+        <div
+          ref={pasteZoneRef}
+          className={styles.pasteZone}
+          tabIndex={disabled ? -1 : 0}
+          role="group"
+          aria-labelledby="song-image-label"
+          aria-describedby="song-image-hint"
+          onPaste={handleImagePaste}
+          onClick={() => pasteZoneRef.current?.focus()}
         >
-          가사
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === 'image'}
-          className={[styles.modeTab, mode === 'image' ? styles.modeTabActive : '']
-            .filter(Boolean)
-            .join(' ')}
-          onClick={() => setMode('image')}
-          disabled={disabled}
-        >
-          악보 이미지
-        </button>
+          <p id="song-image-hint" className={styles.pasteHint}>
+            악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요. 곡 제목은 AI가
+            악보에서 추출합니다.
+          </p>
+          <input
+            id="song-image"
+            type="file"
+            accept={ACCEPTED_IMAGE_TYPES.join(',')}
+            className={styles.fileInput}
+            disabled={disabled}
+            onChange={(e) => void handleImageChange(e.target.files?.[0])}
+          />
+          {imageData ? (
+            <img
+              className={styles.preview}
+              src={`data:${imageData.mimeType};base64,${imageData.base64}`}
+              alt="악보 미리보기"
+            />
+          ) : null}
+          {imageName ? (
+            <p className={styles.fileName}>{imageName}</p>
+          ) : null}
+        </div>
       </div>
 
-      {mode === 'lyrics' ? (
-        <label className={styles.field} htmlFor="song-lyrics">
-          <span className={styles.label}>가사</span>
-          <textarea
-            id="song-lyrics"
-            className={styles.textarea}
-            value={lyricsText}
-            onChange={(e) => setLyricsText(e.target.value)}
-            placeholder={'1절 가사...\n\n후렴 가사...'}
-            disabled={disabled}
-          />
-        </label>
-      ) : (
-        <div className={styles.field}>
-          <span className={styles.label} id="song-image-label">
-            악보 이미지 (JPEG·PNG·WebP, ~4MB)
-          </span>
-          <div
-            ref={pasteZoneRef}
-            className={styles.pasteZone}
-            tabIndex={disabled ? -1 : 0}
-            role="group"
-            aria-labelledby="song-image-label"
-            aria-describedby="song-image-hint"
-            onPaste={handleImagePaste}
-            onClick={() => pasteZoneRef.current?.focus()}
-          >
-            <p id="song-image-hint" className={styles.pasteHint}>
-              악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요.
-            </p>
-            <input
-              id="song-image"
-              type="file"
-              accept={ACCEPTED_IMAGE_TYPES.join(',')}
-              className={styles.fileInput}
-              disabled={disabled}
-              onChange={(e) => void handleImageChange(e.target.files?.[0])}
-            />
-            {imageData ? (
-              <img
-                className={styles.preview}
-                src={`data:${imageData.mimeType};base64,${imageData.base64}`}
-                alt="악보 미리보기"
-              />
-            ) : null}
-            {imageName ? (
-              <p className={styles.fileName}>{imageName}</p>
-            ) : null}
-          </div>
-        </div>
-      )}
-
       <p className={styles.hint}>
-        AI 분석은 10~120초 걸릴 수 있습니다. 결과는 반드시 검수한 뒤 빌드하세요.
+        분석 결과는 검수 후 「라이브러리에 저장」할 때만 DB에 반영됩니다. 저장 전에
+        나가면 결과가 사라집니다.
       </p>
 
       {localError ? <StatusBanner tone="error">{localError}</StatusBanner> : null}

@@ -18,7 +18,9 @@ interface SongDetailViewProps {
   title: string;
   sections: SongSection[];
   disabled?: boolean;
+  buildDisabled?: boolean;
   backLabel?: string;
+  onBuild: () => void;
   onEdit: () => void;
   onBack: () => void;
 }
@@ -27,7 +29,9 @@ export function SongDetailView({
   title,
   sections,
   disabled = false,
+  buildDisabled = false,
   backLabel = '목록으로',
+  onBuild,
   onEdit,
   onBack,
 }: SongDetailViewProps) {
@@ -66,9 +70,15 @@ export function SongDetailView({
         </ul>
       )}
 
+      <p className={styles.buildHint}>
+        ProPresenter 빌드·송출은 저장된 곡을 라이브러리에서 불러와 진행합니다.
+      </p>
       <div className={styles.actions}>
-        <Button fullWidth disabled={disabled} onClick={onEdit}>
-          수정
+        <Button fullWidth disabled={disabled || buildDisabled} onClick={onBuild}>
+          PP 빌드 · 송출
+        </Button>
+        <Button variant="secondary" fullWidth disabled={disabled} onClick={onEdit}>
+          가사·구간 수정
         </Button>
         <Button variant="secondary" fullWidth disabled={disabled} onClick={onBack}>
           {backLabel}
