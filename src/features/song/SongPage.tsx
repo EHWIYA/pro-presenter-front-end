@@ -132,6 +132,9 @@ export function SongPage() {
       setSongTitle(analyze.job.parsed.song_title);
       setSections(analyze.job.parsed.sections);
       setWarnings(analyze.job.parsed.warnings ?? []);
+      if (analyze.job.songId) {
+        setSongId(analyze.job.songId);
+      }
       setStep('edit');
       return;
     }
@@ -244,8 +247,12 @@ export function SongPage() {
       {
         onSuccess: (detail) => {
           setSongId(detail.songId);
-          setSongTitle(detail.title);
-          setSections(detail.sections);
+          if (detail.title) {
+            setSongTitle(detail.title);
+          }
+          if (Array.isArray(detail.sections)) {
+            setSections(detail.sections);
+          }
           goToLibraryDetailAfterSave(
             '라이브러리에 저장했습니다. 아래에서 PP 빌드·송출을 진행하세요.',
           );
@@ -501,7 +508,7 @@ export function SongPage() {
       {!loadingSong && step === 'detail' ? (
         <SongDetailView
           title={songTitle}
-          sections={sections}
+          sections={sections ?? []}
           disabled={actionsDisabled}
           buildDisabled={!operationalReady || !songId}
           backLabel={

@@ -1,4 +1,5 @@
 import { apiFetch, isMockMode } from './client';
+import { normalizeSongDetail } from './normalize';
 import {
   mockCreateSong,
   mockFetchSong,
@@ -37,9 +38,10 @@ export async function fetchSong(songId: string): Promise<SongDetail> {
   if (isMockMode()) {
     return mockFetchSong(songId);
   }
-  return apiFetch<SongDetail>(
+  const raw = await apiFetch<Record<string, unknown>>(
     `/api/v1/songs/${encodeURIComponent(songId)}`,
   );
+  return normalizeSongDetail(raw);
 }
 
 export async function createSong(body: CreateSongRequest): Promise<SongDetail> {

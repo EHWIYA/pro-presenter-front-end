@@ -35,16 +35,20 @@ export function SongDetailView({
   onEdit,
   onBack,
 }: SongDetailViewProps) {
+  const safeSections = sections ?? [];
+
   return (
     <div className={styles.root}>
       <h2 className={styles.title}>{title}</h2>
 
-      {sections.length === 0 ? (
+      {safeSections.length === 0 ? (
         <p className={styles.empty}>저장된 구간이 없습니다.</p>
       ) : (
         <ul className={styles.list}>
-          {sections.map((section, index) => {
-            const lines = section.lines.map((l) => l.trim()).filter(Boolean);
+          {safeSections.map((section, index) => {
+            const lines = (section.lines ?? [])
+              .map((l) => l.trim())
+              .filter(Boolean);
             return (
               <li key={`detail-${index}`} className={styles.card}>
                 <div className={styles.cardHeader}>

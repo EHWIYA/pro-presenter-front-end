@@ -10,7 +10,9 @@ export function useCreateSong() {
     mutationFn: (body: CreateSongRequest) => createSong(body),
     onSuccess: (detail) => {
       void queryClient.invalidateQueries({ queryKey: ['songs'] });
-      void queryClient.setQueryData(queryKeys.song(detail.songId), detail);
+      if (Array.isArray(detail.sections)) {
+        void queryClient.setQueryData(queryKeys.song(detail.songId), detail);
+      }
     },
   });
 }

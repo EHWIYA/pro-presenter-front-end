@@ -6,6 +6,7 @@ export { analyzeSong, buildSong, getSongJob } from './song';
 export { createSong, fetchSongs, fetchSong, updateSongSections } from './songs';
 export {
   normalizeBuildResponse,
+  normalizeSongDetail,
   normalizeSongJob,
   parseAnalyzeResponse,
 } from './normalize';

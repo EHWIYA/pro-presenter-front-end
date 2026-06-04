@@ -7,6 +7,7 @@ import type {
   SongBuildGroup,
   SongBuildMode,
   SongBuildResponse,
+  SongDetail,
   SongJobResponse,
   SongParsed,
   SongSection,
@@ -36,6 +37,18 @@ export function normalizeSections(raw: unknown): SongSection[] {
         : [],
     };
   });
+}
+
+export function normalizeSongDetail(raw: Record<string, unknown>): SongDetail {
+  return {
+    songId: asString(raw.songId) ?? '',
+    title: asString(raw.title) ?? '',
+    artist: raw.artist === null ? null : (asString(raw.artist) ?? null),
+    tags: Array.isArray(raw.tags) ? raw.tags.map((t) => String(t)) : [],
+    sections: normalizeSections(raw.sections),
+    createdAt: asString(raw.createdAt) ?? '',
+    updatedAt: asString(raw.updatedAt) ?? '',
+  };
 }
 
 export function normalizeParsed(raw: unknown): SongParsed | undefined {
