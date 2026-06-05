@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { fetchSong, fetchSongs } from '@/api';
+import type { SongCategory } from '@/api';
 import { queryKeys } from '@/lib/queryKeys';
 
 const DEBOUNCE_MS = 300;
@@ -16,12 +17,18 @@ export function useDebouncedValue<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
-export function useSongs(query: string) {
+export function useSongs(query: string, category?: SongCategory) {
   const debouncedQ = useDebouncedValue(query, DEBOUNCE_MS);
 
   return useQuery({
-    queryKey: queryKeys.songs({ q: debouncedQ, limit: 20, offset: 0 }),
-    queryFn: () => fetchSongs({ q: debouncedQ, limit: 20, offset: 0 }),
+    queryKey: queryKeys.songs({
+      q: debouncedQ,
+      category,
+      limit: 20,
+      offset: 0,
+    }),
+    queryFn: () =>
+      fetchSongs({ q: debouncedQ, category, limit: 20, offset: 0 }),
   });
 }
 

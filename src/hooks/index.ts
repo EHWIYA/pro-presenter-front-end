@@ -1,3 +1,4 @@
+export { useTheme } from './useTheme';
 export { useVenues } from './useVenues';
 export { useVenueStatuses } from './useVenueStatuses';
 export { useVenueProbe } from './useVenueProbe';
@@ -9,5 +10,6 @@ export { useTriggerSlide } from './useTriggerSlide';
 export { useWorshipBuildCache } from './useWorshipBuildCache';
 export { useSongAnalyze } from './useSongAnalyze';
 export { useSongs, useSongDetail, useDebouncedValue } from './useSongs';
+export { useSongCategories } from './useSongCategories';
 export { useCreateSong } from './useCreateSong';
 export { useUpdateSongSections } from './useUpdateSongSections';

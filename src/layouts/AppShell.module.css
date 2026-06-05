@@ -13,19 +13,29 @@
   justify-content: space-between;
   min-height: var(--header-h);
   padding: 0 var(--space-md);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-primary);
+  border-bottom: 2px solid var(--color-gold);
+  color: var(--color-text-on-primary);
 }
 
 .title {
   font-size: 1.0625rem;
   font-weight: 700;
+  color: var(--color-text-on-primary);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  max-width: 58%;
 }
 
 .venueBadge {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
-  max-width: 40%;
+  color: color-mix(in srgb, var(--color-text-on-primary) 72%, transparent);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

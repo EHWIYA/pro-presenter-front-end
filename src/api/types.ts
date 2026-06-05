@@ -114,6 +114,12 @@ export interface ApiErrorBody {
   message?: string;
 }
 
+/** 기본 곡 장르 3종 */
+export type BuiltinSongCategory = 'praise' | 'hymn' | 'special';
+
+/** 기본 3종 또는 사용자 추가 `custom:<slug>` */
+export type SongCategory = BuiltinSongCategory | `custom:${string}`;
+
 export type SongSectionType =
   | 'intro'
   | 'verse'
@@ -235,6 +241,7 @@ export interface SongListItem {
   songId: string;
   title: string;
   artist: string | null;
+  category: SongCategory;
   tags: string[];
   sectionCount: number;
   updatedAt: string;
@@ -249,6 +256,7 @@ export interface SongDetail {
   songId: string;
   title: string;
   artist: string | null;
+  category: SongCategory;
   tags: string[];
   sections: SongSection[];
   createdAt: string;
@@ -258,9 +266,11 @@ export interface SongDetail {
 export interface UpdateSongSectionsRequest {
   sections: SongSection[];
   title?: string;
+  category?: SongCategory;
 }
 
 export interface CreateSongRequest {
   title: string;
   sections: SongSection[];
+  category?: SongCategory;
 }

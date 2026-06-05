@@ -1,15 +1,26 @@
-:root {
-  --color-bg: #0f0f14;
-  --color-surface: #1a1a24;
-  --color-surface-raised: #242433;
-  --color-border: #2e2e42;
-  --color-text: #f0f0f5;
-  --color-text-muted: #9a9ab0;
-  --color-accent: #5b8def;
-  --color-accent-hover: #7aa3f5;
-  --color-success: #3ecf8e;
-  --color-danger: #ef6b6b;
-  --color-warning: #e8b84a;
+:root,
+[data-theme='light'] {
+  /* 주보 라이트 — 딥 그린 · 슬레이트 블루 · 스카이 블루 · 소프트 골드 */
+  --color-primary: #2e4b3e;
+  --color-primary-hover: #243d32;
+  --color-heading: #2e4b3e;
+  --color-secondary: #5a6f7d;
+  --color-secondary-surface: #e8edf0;
+  --color-accent: #5a9fd4;
+  --color-accent-hover: #4a8fc4;
+  --color-gold: #c4a77d;
+  --color-bg: #f5f6f4;
+  --color-surface: #ffffff;
+  --color-surface-raised: #eef0ed;
+  --color-border: #d5dbd6;
+  --color-text: #2a352f;
+  --color-text-muted: #6b7b75;
+  --color-text-on-primary: #f5f6f4;
+  --color-success: #3d7a5c;
+  --color-danger: #b85c5c;
+  --color-warning: #c4a77d;
+  --color-overlay: rgb(20 30 24 / 45%);
+  --shadow-sm: 0 1px 4px rgb(46 75 62 / 8%);
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -22,6 +33,29 @@
   --tap-min: 44px;
   --header-h: 52px;
   --nav-h: 56px;
+}
+
+[data-theme='dark'] {
+  --color-primary: #2e4b3e;
+  --color-primary-hover: #3a5c4d;
+  --color-heading: #ededed;
+  --color-secondary: #9499a4;
+  --color-secondary-surface: #2c2c2c;
+  --color-accent: #5daee6;
+  --color-accent-hover: #79beeb;
+  --color-gold: #bda67f;
+  --color-bg: #111111;
+  --color-surface: #1a1a1a;
+  --color-surface-raised: #242424;
+  --color-border: #3a3a3a;
+  --color-text: #ededed;
+  --color-text-muted: #9e9e9e;
+  --color-text-on-primary: #f2f2f2;
+  --color-success: #5cb87a;
+  --color-danger: #e07070;
+  --color-warning: #c9b07a;
+  --color-overlay: rgb(0 0 0 / 70%);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 35%);
 }
 
 *,
@@ -43,6 +77,10 @@ body {
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-font-smoothing: antialiased;
+}
+
+[data-theme='dark'] body {
+  -webkit-font-smoothing: auto;
 }
 
 #root {

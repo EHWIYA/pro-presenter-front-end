@@ -30,7 +30,7 @@
 
 .venueItemSelected {
   border-color: var(--color-accent);
-  background: rgba(91, 141, 239, 0.1);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
 }
 
 .venueName {
@@ -62,15 +62,15 @@
 }
 
 .statusOnline {
-  color: #0b7a3e;
-  background: #e8fff2;
-  border-color: #9ae2bb;
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border));
 }
 
 .statusOffline {
-  color: #8f2b2b;
-  background: #fff1f1;
-  border-color: #f2b3b3;
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-danger) 35%, var(--color-border));
 }
 
 .venueMeta {

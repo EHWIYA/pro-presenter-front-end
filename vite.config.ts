@@ -1,9 +1,23 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 
-export default defineConfig({
+const DEV_API_PROXY_PATH = '/api';
+
+function resolveDevProxyTarget(apiBaseUrl: string | undefined): string {
+  const trimmed = apiBaseUrl?.trim().replace(/\/$/, '') ?? '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  return 'https://pro-api.iwhya.kr';
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const devProxyTarget = resolveDevProxyTarget(env.VITE_API_BASE_URL);
+
+  return {
   plugins: [
     react(),
     VitePWA({
@@ -13,8 +27,8 @@ export default defineConfig({
         name: 'Pro Presenter',
         short_name: 'ProApp',
         description: '성경 구절 빌드 및 ProPresenter 송출',
-        theme_color: '#1a1a2e',
-        background_color: '#1a1a2e',
+        theme_color: '#2e4b3e',
+        background_color: '#f5f6f4',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -50,5 +64,15 @@ export default defineConfig({
   },
   server: {
     port: 5174,
+    // pro-api CORS는 pro-app만 허용 — 로컬은 동일 출처 /api 로 우회
+    proxy: {
+      [DEV_API_PROXY_PATH]: {
+        target: devProxyTarget,
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(new RegExp(`^${DEV_API_PROXY_PATH}`), ''),
+      },
+    },
   },
+  };
 });

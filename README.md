@@ -24,8 +24,11 @@ npm run dev     # http://localhost:5174
 
 ```env
 VITE_USE_MOCK=false
+VITE_API_BASE_URL=https://pro-api.iwhya.kr
 VITE_API_KEY=<NAS pro-presenter/live/.env API_KEY>
 ```
+
+로컬 `npm run dev`는 **CORS 우회**: 위 URL을 그대로 두면 요청이 `http://localhost:5174/api/...` 로 나가 Vite가 pro-api로 프록시합니다 (운영 PWA는 직접 호출).
 
 ## 검증 (IoT Web 패턴)
 
@@ -41,7 +44,8 @@ npm run build
 1. **연결** — venue 선택 · probe → 성공 시 **홈** 이동
 2. **홈** — 프레젠테이션·그룹·슬라이드 수 목록
 3. **구절** — 성경 구절 입력 → POST build → `slide_map`
-4. **찬양** — 신규·악보: analyze → 검수 → 라이브러리 저장 · 곡 라이브러리: 곡 선택 → build-song → `slide_map` + trigger
+4. **찬양** — 신규·악보: 이미지 → AI 분석 → **검수·저장**(장르 선택) · 라이브러리: 곡 선택 → build-song → trigger  
+   (백엔드 장르 API 공조는 일괄 진행 — 초안 [docs/backend-mail-song-categories.md](docs/backend-mail-song-categories.md))
 5. **송출** — 구절 flow용 trigger (찬양은 찬양 탭에서 직접 송출)
 
 ## 환경 변수
@@ -82,4 +86,7 @@ src/
   styles/
 scripts/
   generate-pwa-icons.mjs
+docs/
+  backend-mail-song-categories.md   # 찬양 장르·카테고리 API 공조 (백엔드 메일용)
+  backend-mail-presentations.md
 ```

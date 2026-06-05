@@ -73,7 +73,10 @@ function clipboardHasNonImageContent(clipboardData: DataTransfer): boolean {
   );
 }
 
-export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPageProps) {
+export function SongUploadPage({
+  disabled = false,
+  onSubmit,
+}: SongUploadPageProps) {
   const pasteZoneRef = useRef<HTMLDivElement>(null);
   const [imageName, setImageName] = useState<string | null>(null);
   const [imageData, setImageData] = useState<{
@@ -151,8 +154,8 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
           onClick={() => pasteZoneRef.current?.focus()}
         >
           <p id="song-image-hint" className={styles.pasteHint}>
-            악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요. 곡 제목은 AI
-            분석 후 검수 화면에서 확인·수정합니다.
+            악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요. 제목·장르는
+            분석이 끝난 뒤 검수·저장 화면에서 정합니다.
           </p>
           <input
             id="song-image"
@@ -176,8 +179,8 @@ export function SongUploadPage({ disabled = false, onSubmit }: SongUploadPagePro
       </div>
 
       <p className={styles.hint}>
-        분석 결과는 검수 후 「라이브러리에 저장」할 때만 DB에 반영됩니다. 저장 전에
-        나가면 결과가 사라집니다.
+        「분석 시작」 후 가사 구간을 검수하고, 그때 장르를 선택해 라이브러리에
+        저장합니다.
       </p>
 
       {localError ? <StatusBanner tone="error">{localError}</StatusBanner> : null}

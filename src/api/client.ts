@@ -21,12 +21,22 @@ export function assertApiKeyConfigured(): void {
   }
 }
 
-export function getApiBaseUrl(): string {
-  const base = import.meta.env.VITE_API_BASE_URL?.trim();
-  if (!base && !useMock) {
+const DEV_API_PROXY_PATH = '/api';
+
+/** 로컬 dev: pro-api CORS(pro-app만) 우회 — Vite가 /api → VITE_API_BASE_URL 프록시 */
+function resolveApiBaseUrl(): string {
+  const configured = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
+  if (import.meta.env.DEV && !useMock && /^https?:\/\//i.test(configured)) {
+    return DEV_API_PROXY_PATH;
+  }
+  if (!configured && !useMock) {
     throw new Error('VITE_API_BASE_URL is not set');
   }
-  return (base ?? '').replace(/\/$/, '');
+  return configured.replace(/\/$/, '');
+}
+
+export function getApiBaseUrl(): string {
+  return resolveApiBaseUrl();
 }
 
 export class ApiError extends Error {

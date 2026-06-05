@@ -1,28 +1,60 @@
 .mainTabs {
-  display: flex;
-  gap: var(--space-xs);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
   margin-bottom: var(--space-md);
+  padding: var(--space-xs);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
 }
 
 .mainTab {
-  flex: 1;
-  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  min-height: 52px;
   padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
-  font-size: 0.875rem;
+  background: transparent;
+  text-align: left;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .mainTabActive {
-  border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.mainTabLabel {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.mainTabActive .mainTabLabel {
+  color: var(--color-accent);
+}
+
+.mainTabDesc {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+.mainTabActive .mainTabDesc {
+  color: var(--color-accent);
 }
 
 .modalBackdrop {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 45%);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

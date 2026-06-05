@@ -1,3 +1,4 @@
+import { normalizeSongCategory } from './songCategory';
 import type {
   AnalyzeCandidates,
   AnalyzeJobQueued,
@@ -40,11 +41,13 @@ export function normalizeSections(raw: unknown): SongSection[] {
 }
 
 export function normalizeSongDetail(raw: Record<string, unknown>): SongDetail {
+  const tags = Array.isArray(raw.tags) ? raw.tags.map((t) => String(t)) : [];
   return {
     songId: asString(raw.songId) ?? '',
     title: asString(raw.title) ?? '',
     artist: raw.artist === null ? null : (asString(raw.artist) ?? null),
-    tags: Array.isArray(raw.tags) ? raw.tags.map((t) => String(t)) : [],
+    category: normalizeSongCategory(raw.category ?? raw.genre, tags),
+    tags,
     sections: normalizeSections(raw.sections),
     createdAt: asString(raw.createdAt) ?? '',
     updatedAt: asString(raw.updatedAt) ?? '',

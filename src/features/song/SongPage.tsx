@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Spinner, StatusBanner } from '@/components';
-import type { SongAnalyzeRequest, SongBuildMode, SongSection } from '@/api';
+import type {
+  SongAnalyzeRequest,
+  SongBuildMode,
+  SongCategory,
+  SongSection,
+} from '@/api';
 import { fetchSong } from '@/api';
 import {
   useBuildSong,
@@ -44,6 +49,8 @@ export function SongPage() {
   const [step, setStep] = useState<SongStep>('input');
   const [songId, setSongId] = useState<string | null>(null);
   const [songTitle, setSongTitle] = useState('');
+  const [songCategory, setSongCategory] = useState<SongCategory>('praise');
+  const [songArtist, setSongArtist] = useState<string | null>(null);
   const [sections, setSections] = useState<SongSection[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [fromLibrary, setFromLibrary] = useState(false);
@@ -87,6 +94,8 @@ export function SongPage() {
         const detail = await fetchSong(id);
         setSongId(detail.songId);
         setSongTitle(detail.title);
+        setSongCategory(detail.category);
+        setSongArtist(detail.artist);
         setSections(detail.sections);
         setWarnings([]);
         setFromLibrary(true);
@@ -106,16 +115,25 @@ export function SongPage() {
   );
 
   useEffect(() => {
-    if (analyze.libraryHit) {
-      setSongId(analyze.libraryHit.songId);
-      setSongTitle(analyze.libraryHit.title);
-      setSections(analyze.libraryHit.sections);
-      setWarnings([]);
-      setFromLibrary(true);
-      setIsDraftSession(false);
-      setDetailReturnStep('input');
-      setStep('detail');
-    }
+    if (!analyze.libraryHit) return;
+    const hit = analyze.libraryHit;
+    setSongId(hit.songId);
+    setSongTitle(hit.title);
+    setSections(hit.sections);
+    setWarnings([]);
+    setFromLibrary(true);
+    setIsDraftSession(false);
+    setDetailReturnStep('input');
+    setStep('detail');
+    void fetchSong(hit.songId)
+      .then((detail) => {
+        setSongCategory(detail.category);
+        setSongArtist(detail.artist);
+      })
+      .catch(() => {
+        setSongCategory('praise');
+        setSongArtist(null);
+      });
   }, [analyze.libraryHit]);
 
   useEffect(() => {
@@ -135,6 +153,7 @@ export function SongPage() {
       if (analyze.job.songId) {
         setSongId(analyze.job.songId);
       }
+      setSongCategory('praise');
       setStep('edit');
       return;
     }
@@ -158,6 +177,7 @@ export function SongPage() {
     if (isAnalyzing) return;
 
     setLastUploadPayload(payload);
+    setSongArtist(null);
     setSections([]);
     setWarnings([]);
     setSongId(null);
@@ -223,7 +243,7 @@ export function SongPage() {
 
     if (songId) {
       saveSections.mutate(
-        { songId, sections, title },
+        { songId, sections, title, category: songCategory },
         {
           onSuccess: () => {
             if (isDraftSession) {
@@ -243,13 +263,15 @@ export function SongPage() {
     }
 
     createSongMutation.mutate(
-      { title, sections },
+      { title, sections, category: songCategory },
       {
         onSuccess: (detail) => {
           setSongId(detail.songId);
           if (detail.title) {
             setSongTitle(detail.title);
           }
+          setSongCategory(detail.category);
+          setSongArtist(detail.artist);
           if (Array.isArray(detail.sections)) {
             setSections(detail.sections);
           }
@@ -349,11 +371,13 @@ export function SongPage() {
     setPendingIndex(null);
     setLastUploadPayload(null);
     setSongTitle('');
+    setSongCategory('praise');
+    setSongArtist(null);
   }
 
   if (!venueId) {
     return (
-      <Card title="찬양">
+      <Card title="찬양 라이브러리">
         <StatusBanner tone="warning">먼저 연결 탭에서 PC를 연결하세요.</StatusBanner>
         <Button fullWidth onClick={() => navigate('/')}>
           PC 연결
@@ -375,9 +399,9 @@ export function SongPage() {
 
   const subtitle =
     step === 'input' && mainTab === 'library'
-      ? '저장된 곡을 검색·선택하세요.'
-      : step === 'input'
-        ? '악보 이미지를 넣고 AI 분석을 시작하세요. 제목은 분석 결과에서 확인합니다.'
+      ? '찬양·성가곡·특송 및 추가 카테고리로 곡을 찾으세요.'
+      : step === 'input' && mainTab === 'upload'
+        ? '악보 이미지만 올리면 됩니다. 장르는 분석 후 검수·저장에서 선택합니다.'
         : step === 'analyzing'
           ? '올린 악보를 분석하고 있습니다. 완료되면 검수 화면으로 이어집니다.'
         : step === 'candidates'
@@ -386,8 +410,8 @@ export function SongPage() {
             ? '저장된 곡입니다. PP 빌드·송출 또는 가사 수정을 선택하세요.'
             : step === 'edit'
               ? isDraftSession
-                ? '제목·구간을 검수한 뒤 라이브러리에 저장하세요. 빌드는 저장 후 라이브러리에서 진행합니다.'
-                : '구간을 수정한 뒤 저장하세요. 빌드는 상세 화면에서 진행합니다.'
+                ? '제목·장르·구간을 검수한 뒤 라이브러리에 저장하세요. 빌드는 저장 후 라이브러리에서 진행합니다.'
+                : '장르·구간을 수정한 뒤 저장하세요. 빌드는 상세 화면에서 진행합니다.'
               : step === 'build'
                 ? `${songTitle || '곡'} — PP 빌드 후 슬라이드를 탭해 송출하세요.`
                 : '';
@@ -427,7 +451,8 @@ export function SongPage() {
               .join(' ')}
             onClick={() => setMainTab('library')}
           >
-            곡 라이브러리
+            <span className={styles.mainTabLabel}>라이브러리</span>
+            <span className={styles.mainTabDesc}>장르별 곡 목록</span>
           </button>
           <button
             type="button"
@@ -441,7 +466,8 @@ export function SongPage() {
               .join(' ')}
             onClick={() => setMainTab('upload')}
           >
-            신규·악보
+            <span className={styles.mainTabLabel}>신규·악보</span>
+            <span className={styles.mainTabDesc}>악보 업로드 · AI 분석</span>
           </button>
         </div>
       ) : null}
@@ -508,6 +534,8 @@ export function SongPage() {
       {!loadingSong && step === 'detail' ? (
         <SongDetailView
           title={songTitle}
+          category={songCategory}
+          artist={songArtist}
           sections={sections ?? []}
           disabled={actionsDisabled}
           buildDisabled={!operationalReady || !songId}
@@ -530,11 +558,13 @@ export function SongPage() {
         <>
           <SongReviewHeader
             songTitle={songTitle}
+            category={songCategory}
             sectionCount={sections.length}
             validSectionCount={countValidSections(sections)}
             isDraft={isDraftSession}
             disabled={actionsDisabled}
             onTitleChange={setSongTitle}
+            onCategoryChange={setSongCategory}
             onReanalyze={
               isDraftSession && lastUploadPayload && songTitle.trim()
                 ? () => setReanalyzeConfirmOpen(true)

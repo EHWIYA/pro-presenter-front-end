@@ -8,6 +8,7 @@ import {
 } from './mock';
 import type {
   CreateSongRequest,
+  SongCategory,
   SongDetail,
   SongListResponse,
   SongSection,
@@ -16,6 +17,7 @@ import type {
 
 export interface FetchSongsParams {
   q?: string;
+  category?: SongCategory;
   limit?: number;
   offset?: number;
 }
@@ -23,12 +25,13 @@ export interface FetchSongsParams {
 export async function fetchSongs(
   params: FetchSongsParams = {},
 ): Promise<SongListResponse> {
-  const { q = '', limit = 20, offset = 0 } = params;
+  const { q = '', category, limit = 20, offset = 0 } = params;
   if (isMockMode()) {
-    return mockFetchSongs(q, limit, offset);
+    return mockFetchSongs(q, limit, offset, category);
   }
   const search = new URLSearchParams();
   if (q) search.set('q', q);
+  if (category) search.set('category', category);
   search.set('limit', String(limit));
   search.set('offset', String(offset));
   return apiFetch<SongListResponse>(`/api/v1/songs?${search.toString()}`);
@@ -57,11 +60,15 @@ export async function createSong(body: CreateSongRequest): Promise<SongDetail> {
 export async function updateSongSections(
   songId: string,
   sections: SongSection[],
-  title?: string,
+  options?: { title?: string; category?: SongCategory },
 ): Promise<void> {
-  const body: UpdateSongSectionsRequest = { sections, ...(title ? { title } : {}) };
+  const body: UpdateSongSectionsRequest = {
+    sections,
+    ...(options?.title ? { title: options.title } : {}),
+    ...(options?.category ? { category: options.category } : {}),
+  };
   if (isMockMode()) {
-    await mockUpdateSongSections(songId, sections, title);
+    await mockUpdateSongSections(songId, sections, options);
     return;
   }
   await apiFetch<void>(

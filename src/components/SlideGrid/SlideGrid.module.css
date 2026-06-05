@@ -34,7 +34,7 @@
 
 .slideBtnActive {
   border-color: var(--color-success);
-  background: rgba(62, 207, 142, 0.12);
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface));
 }
 
 .slideBtnPending {

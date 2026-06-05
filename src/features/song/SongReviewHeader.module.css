@@ -13,6 +13,10 @@
   );
 }
 
+[data-theme='dark'] .root {
+  background: var(--color-surface-raised);
+}
+
 .topRow {
   display: flex;
   flex-wrap: wrap;

@@ -17,14 +17,14 @@ export const SECTION_TYPE_OPTIONS: {
 
 /** 구간 카드 왼쪽 액센트 색 */
 export const SECTION_TYPE_ACCENT: Record<SongSectionType, string> = {
-  intro: '#7a8aa8',
+  intro: '#6b7b8c',
   verse: 'var(--color-accent)',
-  pre_chorus: '#9b7ed8',
+  pre_chorus: '#5a6f7d',
   chorus: 'var(--color-warning)',
-  bridge: '#5bcfcf',
-  tag: '#6bcf8e',
-  outro: '#7a8aa8',
-  instrumental: '#6a6a80',
+  bridge: '#7ab8d9',
+  tag: '#4a7a62',
+  outro: '#6b7b8c',
+  instrumental: '#8a9590',
   unknown: 'var(--color-border)',
 };
 

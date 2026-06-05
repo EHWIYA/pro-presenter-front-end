@@ -217,6 +217,7 @@ const MOCK_LIBRARY_SONGS: SongDetail[] = [
     songId: '550e8400-e29b-41d4-a716-446655440000',
     title: '주님의 마음',
     artist: null,
+    category: 'praise',
     tags: [],
     sections: [
       {
@@ -237,13 +238,44 @@ const MOCK_LIBRARY_SONGS: SongDetail[] = [
     songId: '660e8400-e29b-41d4-a716-446655440001',
     title: '주님만이',
     artist: null,
-    tags: ['찬양'],
+    category: 'praise',
+    tags: [],
     sections: [
       { type: 'verse', label: '1절', lines: ['주님만이', '나의 주님'] },
       { type: 'chorus', label: '후렴', lines: ['오 주님', '찬양해'] },
     ],
     createdAt: '2026-06-01T00:00:00+00:00',
     updatedAt: '2026-06-01T12:00:00+00:00',
+  },
+  {
+    songId: '770e8400-e29b-41d4-a716-446655440003',
+    title: '나의 기도하는 것을',
+    artist: null,
+    category: 'hymn',
+    tags: [],
+    sections: [
+      {
+        type: 'verse',
+        label: '1절',
+        lines: ['나의 기도하는 것을', '주께서 들으시고'],
+      },
+      { type: 'verse', label: '2절', lines: ['나의 간구하는 것을', '주께서 아시네'] },
+    ],
+    createdAt: '2026-05-20T00:00:00+00:00',
+    updatedAt: '2026-05-28T09:00:00+00:00',
+  },
+  {
+    songId: '880e8400-e29b-41d4-a716-446655440004',
+    title: '은혜 아니면',
+    artist: '김윤진',
+    category: 'special',
+    tags: [],
+    sections: [
+      { type: 'verse', label: '1절', lines: ['은혜 아니면', '날 구원할 이 없네'] },
+      { type: 'chorus', label: '후렴', lines: ['오 주 예수', '나의 구주'] },
+    ],
+    createdAt: '2026-06-03T00:00:00+00:00',
+    updatedAt: '2026-06-04T14:00:00+00:00',
   },
 ];
 
@@ -284,16 +316,19 @@ export async function mockFetchSongs(
   q: string,
   limit: number,
   offset: number,
+  category?: import('./types').SongCategory,
 ): Promise<SongListResponse> {
   await delay(250);
   const query = q.trim().toLowerCase();
-  const filtered = MOCK_LIBRARY_SONGS.filter(
-    (s) => !query || s.title.toLowerCase().includes(query),
-  );
+  const filtered = MOCK_LIBRARY_SONGS.filter((s) => {
+    if (category && s.category !== category) return false;
+    return !query || s.title.toLowerCase().includes(query);
+  });
   const items = filtered.slice(offset, offset + limit).map((s) => ({
     songId: s.songId,
     title: s.title,
     artist: s.artist,
+    category: s.category,
     tags: s.tags,
     sectionCount: s.sections.length,
     updatedAt: s.updatedAt,
@@ -313,14 +348,15 @@ export async function mockFetchSong(songId: string): Promise<SongDetail> {
 export async function mockUpdateSongSections(
   songId: string,
   sections: SongSection[],
-  title?: string,
+  options?: { title?: string; category?: import('./types').SongCategory },
 ): Promise<void> {
   await delay(300);
   const idx = MOCK_LIBRARY_SONGS.findIndex((s) => s.songId === songId);
   if (idx < 0) throw new Error('곡을 찾을 수 없습니다.');
   MOCK_LIBRARY_SONGS[idx] = {
     ...MOCK_LIBRARY_SONGS[idx],
-    title: title?.trim() || MOCK_LIBRARY_SONGS[idx].title,
+    title: options?.title?.trim() || MOCK_LIBRARY_SONGS[idx].title,
+    category: options?.category ?? MOCK_LIBRARY_SONGS[idx].category,
     sections: sections.map((s) => ({ ...s, lines: [...s.lines] })),
     updatedAt: new Date().toISOString(),
   };
@@ -329,6 +365,7 @@ export async function mockUpdateSongSections(
 export async function mockCreateSong(body: {
   title: string;
   sections: SongSection[];
+  category?: import('./types').SongCategory;
 }): Promise<SongDetail> {
   await delay(300);
   const title = body.title.trim();
@@ -339,6 +376,7 @@ export async function mockCreateSong(body: {
     songId: `mock-${Date.now()}`,
     title,
     artist: null,
+    category: body.category ?? 'praise',
     tags: [],
     sections: body.sections.map((s) => ({ ...s, lines: [...s.lines] })),
     createdAt: new Date().toISOString(),

@@ -4,7 +4,10 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from '@/app/App';
 import { queryClient } from '@/app/queryClient';
+import { initTheme } from '@/lib/theme';
 import '@/styles/global.css';
+
+initTheme();
 
 registerSW({ immediate: true });
 

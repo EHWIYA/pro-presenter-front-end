@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateSongSections } from '@/api';
-import type { SongSection } from '@/api';
+import type { SongCategory, SongSection } from '@/api';
 import { queryKeys } from '@/lib/queryKeys';
 
 export function useUpdateSongSections() {
@@ -11,11 +11,13 @@ export function useUpdateSongSections() {
       songId,
       sections,
       title,
+      category,
     }: {
       songId: string;
       sections: SongSection[];
       title?: string;
-    }) => updateSongSections(songId, sections, title),
+      category?: SongCategory;
+    }) => updateSongSections(songId, sections, { title, category }),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.song(variables.songId),

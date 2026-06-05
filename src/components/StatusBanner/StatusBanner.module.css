@@ -5,21 +5,21 @@
 }
 
 .info {
-  background: rgba(91, 141, 239, 0.15);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface));
   color: var(--color-accent-hover);
 }
 
 .success {
-  background: rgba(62, 207, 142, 0.15);
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
   color: var(--color-success);
 }
 
 .error {
-  background: rgba(239, 107, 107, 0.15);
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface));
   color: var(--color-danger);
 }
 
 .warning {
-  background: rgba(232, 184, 74, 0.15);
-  color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 18%, var(--color-surface));
+  color: color-mix(in srgb, var(--color-warning) 70%, var(--color-text));
 }

@@ -26,6 +26,8 @@ export type {
   SongBuildMode,
   SongBuildRequest,
   SongBuildResponse,
+  BuiltinSongCategory,
+  SongCategory,
   CreateSongRequest,
   SongDetail,
   SongJobResponse,

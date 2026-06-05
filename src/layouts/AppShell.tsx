@@ -5,6 +5,7 @@ import houseSvg from 'cupertino-icons-svg/svg/house.svg?raw';
 import playCircleSvg from 'cupertino-icons-svg/svg/play_circle.svg?raw';
 import gearSvg from 'cupertino-icons-svg/svg/gear.svg?raw';
 import { CupertinoIcon } from '@/components';
+import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import { getSelectedVenueId } from '@/lib/session';
 import { useVenues } from '@/hooks';
 import styles from './AppShell.module.css';
@@ -27,9 +28,12 @@ export function AppShell() {
     <div className={styles.shell}>
       <header className={styles.header}>
         <h1 className={styles.title}>Pro Presenter</h1>
-        <span className={styles.venueBadge} title={venueName}>
-          {venueName}
-        </span>
+        <div className={styles.headerRight}>
+          <span className={styles.venueBadge} title={venueName}>
+            {venueName}
+          </span>
+          <ThemeToggle />
+        </div>
       </header>
 
       <main className={styles.main}>
