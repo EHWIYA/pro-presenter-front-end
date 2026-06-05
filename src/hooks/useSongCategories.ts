@@ -4,6 +4,7 @@ import {
   addCustomCategory,
   getAllCategoryDefs,
   removeCustomCategory,
+  updateCustomCategory,
   SONG_CATEGORIES_CHANGED,
   type CustomCategoryRecord,
   type SongCategoryDef,
@@ -37,6 +38,17 @@ export function useSongCategories() {
     [refresh],
   );
 
+  const updateCategory = useCallback(
+    (id: `custom:${string}`, label: string) => {
+      const result = updateCustomCategory(id, label);
+      if (result.ok) {
+        refresh();
+      }
+      return result;
+    },
+    [refresh],
+  );
+
   const removeCategory = useCallback(
     (id: `custom:${string}`) => {
       removeCustomCategory(id);
@@ -51,6 +63,7 @@ export function useSongCategories() {
     defs,
     customCategories,
     addCategory,
+    updateCategory,
     removeCategory,
     refresh,
   };

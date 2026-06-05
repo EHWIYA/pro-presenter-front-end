@@ -1,54 +1,117 @@
-.mainTabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
-  padding: var(--space-xs);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
+.libraryCard {
+  border: none;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
 }
 
-.mainTab {
+.fab {
+  position: fixed;
+  right: var(--space-md);
+  bottom: calc(var(--nav-h) + var(--space-md) + env(safe-area-inset-bottom, 0px));
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    145deg,
+    var(--color-accent) 0%,
+    color-mix(in srgb, var(--color-accent) 72%, var(--color-primary)) 100%
+  );
+  color: #fff;
+  box-shadow:
+    0 4px 14px color-mix(in srgb, var(--color-accent) 42%, transparent),
+    0 1px 3px rgb(0 0 0 / 12%);
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1),
+    box-shadow 0.2s ease;
+}
+
+.fab:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.fab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fabIcon {
+  font-size: 1.75rem;
+  font-weight: 300;
+  line-height: 1;
+  margin-top: -2px;
+}
+
+.uploadModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: var(--color-overlay);
+  animation: fadeIn 0.2s ease;
+}
+
+.uploadModal {
+  width: 100%;
+  max-width: 480px;
+  max-height: min(88dvh, 640px);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.125rem;
-  min-height: 52px;
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
-  text-align: left;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.mainTabActive {
-  border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
   background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  box-shadow: 0 -8px 32px rgb(0 0 0 / 12%);
+  animation: slideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: hidden;
 }
 
-.mainTabLabel {
-  font-size: 0.9375rem;
+.uploadModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  flex-shrink: 0;
+}
+
+.uploadModalTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
   font-weight: 700;
+  letter-spacing: var(--letter-tight);
+  color: var(--color-heading);
+}
+
+.uploadModalClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
   color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  transition: background 0.15s ease;
 }
 
-.mainTabActive .mainTabLabel {
-  color: var(--color-accent);
+.uploadModalClose:active {
+  background: var(--color-border);
 }
 
-.mainTabDesc {
-  font-size: 0.6875rem;
-  color: var(--color-text-muted);
-  line-height: 1.3;
-}
-
-.mainTabActive .mainTabDesc {
-  color: var(--color-accent);
+.uploadModalBody {
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modalBackdrop {
@@ -59,7 +122,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-lg);
-  z-index: 100;
+  z-index: 110;
 }
 
 .modal {
@@ -69,21 +132,68 @@
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 16%);
 }
 
 .modalTitle {
   margin: 0 0 var(--space-sm);
   font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: var(--letter-tight);
 }
 
 .modalText {
   margin: 0 0 var(--space-md);
   font-size: 0.875rem;
   color: var(--color-text-muted);
+  line-height: 1.55;
 }
 
 .modalActions {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 520px) {
+  .uploadModalBackdrop {
+    align-items: center;
+    padding: var(--space-lg);
+  }
+
+  .uploadModal {
+    border-radius: var(--radius-lg);
+    border-bottom: 1px solid var(--color-border);
+    max-height: min(80dvh, 600px);
+    animation-name: scaleIn;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
 }

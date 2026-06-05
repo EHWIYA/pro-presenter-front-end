@@ -39,27 +39,55 @@ export function SongLibraryPanel({
 
   return (
     <div className={styles.root}>
-      <SongCategoryFilter
-        value={categoryFilter}
-        onChange={setCategoryFilter}
-        disabled={disabled}
-      />
+      <header className={styles.header}>
+        <h1 className={styles.title}>찬양 라이브러리</h1>
+        <p className={styles.subtitle}>
+          제목·아티스트로 검색하거나 장르를 골라 곡을 찾으세요.
+        </p>
+      </header>
 
-      <div className={styles.searchWrap}>
-        <input
-          className={styles.search}
-          type="search"
-          placeholder="곡 제목·아티스트 검색…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          disabled={disabled}
-          aria-label="곡 검색"
-        />
-        {!songs.isLoading && !songs.error ? (
-          <span className={styles.count} aria-live="polite">
-            {total}곡
-          </span>
-        ) : null}
+      <div className={styles.filters}>
+        <div className={styles.categoryBlock}>
+          <SongCategoryFilter
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            disabled={disabled}
+          />
+          <div className={styles.manageAlign}>
+            <SongCategoryManage disabled={disabled} />
+          </div>
+        </div>
+
+        <div className={styles.searchBlock}>
+          <div className={styles.searchWrap}>
+            <svg
+              className={styles.searchIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3-3" />
+            </svg>
+            <input
+              className={styles.search}
+              type="search"
+              placeholder="곡 제목·아티스트 검색…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={disabled}
+              aria-label="곡 검색"
+            />
+          </div>
+          {!songs.isLoading && !songs.error ? (
+            <p className={styles.resultCount} aria-live="polite">
+              {total}곡
+            </p>
+          ) : null}
+        </div>
       </div>
 
       {songs.isLoading ? <Spinner centered /> : null}
@@ -92,14 +120,20 @@ export function SongLibraryPanel({
       ) : null}
 
       {!songs.isLoading && !songs.error && items.length === 0 ? (
-        <p className={styles.empty}>
-          {query.trim() || categoryFilter !== 'all'
-            ? '조건에 맞는 곡이 없습니다.'
-            : '저장된 곡이 없습니다. 신규·악보 탭에서 추가하세요.'}
-        </p>
+        <div className={styles.empty}>
+          <p>
+            {query.trim() || categoryFilter !== 'all'
+              ? '조건에 맞는 곡이 없습니다.'
+              : '저장된 곡이 없습니다.'}
+          </p>
+          {!query.trim() && categoryFilter === 'all' ? (
+            <p className={styles.emptyHint}>
+              우측 하단 + 버튼으로 악보를 추가하세요.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
-      <SongCategoryManage disabled={disabled} compact />
     </div>
   );
 }

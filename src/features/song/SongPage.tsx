@@ -29,7 +29,6 @@ import { countValidSections, SongSectionsEditor } from './SongSectionsEditor';
 import { SongUploadPage, type SongUploadPayload } from './SongUploadPage';
 import styles from './SongPage.module.css';
 
-type MainTab = 'library' | 'upload';
 type SongStep = 'input' | 'analyzing' | 'candidates' | 'detail' | 'edit' | 'build';
 type DetailReturnStep = 'input' | 'candidates';
 
@@ -44,7 +43,7 @@ export function SongPage() {
   const saveSections = useUpdateSongSections();
   const createSongMutation = useCreateSong();
 
-  const [mainTab, setMainTab] = useState<MainTab>('upload');
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [isDraftSession, setIsDraftSession] = useState(false);
   const [step, setStep] = useState<SongStep>('input');
   const [songId, setSongId] = useState<string | null>(null);
@@ -163,7 +162,7 @@ export function SongPage() {
       (analyze.jobError && !analyze.start.isPending)
     ) {
       setStep('input');
-      setMainTab('upload');
+      setUploadModalOpen(true);
     }
   }, [
     analyze.job,
@@ -223,7 +222,7 @@ export function SongPage() {
     setIsDraftSession(false);
     setFromLibrary(true);
     setSaveMessage(null);
-    setMainTab('library');
+    setUploadModalOpen(false);
     setDetailReturnStep('input');
     setStep('detail');
     setStatusMessage(message);
@@ -373,6 +372,12 @@ export function SongPage() {
     setSongTitle('');
     setSongCategory('praise');
     setSongArtist(null);
+    setUploadModalOpen(false);
+  }
+
+  function handleUploadSubmit(payload: SongUploadPayload) {
+    setUploadModalOpen(false);
+    handleAnalyze(payload);
   }
 
   if (!venueId) {
@@ -387,39 +392,36 @@ export function SongPage() {
   }
 
   const showDraftFlow =
-    mainTab === 'upload' &&
-    (step === 'input' || step === 'analyzing' || step === 'edit');
+    step === 'analyzing' || (step === 'edit' && isDraftSession);
 
   const draftFlowStep: DraftFlowStep =
-    step === 'input'
-      ? 'upload'
-      : step === 'analyzing'
-        ? 'analyzing'
-        : 'edit';
+    step === 'analyzing' ? 'analyzing' : 'edit';
 
-  const subtitle =
-    step === 'input' && mainTab === 'library'
-      ? '찬양·성가곡·특송 및 추가 카테고리로 곡을 찾으세요.'
-      : step === 'input' && mainTab === 'upload'
-        ? '악보 이미지만 올리면 됩니다. 장르는 분석 후 검수·저장에서 선택합니다.'
-        : step === 'analyzing'
-          ? '올린 악보를 분석하고 있습니다. 완료되면 검수 화면으로 이어집니다.'
-        : step === 'candidates'
-          ? '라이브러리 후보 중 곡을 선택하세요.'
-          : step === 'detail'
-            ? '저장된 곡입니다. PP 빌드·송출 또는 가사 수정을 선택하세요.'
-            : step === 'edit'
-              ? isDraftSession
-                ? '제목·장르·구간을 검수한 뒤 라이브러리에 저장하세요. 빌드는 저장 후 라이브러리에서 진행합니다.'
-                : '장르·구간을 수정한 뒤 저장하세요. 빌드는 상세 화면에서 진행합니다.'
-              : step === 'build'
-                ? `${songTitle || '곡'} — PP 빌드 후 슬라이드를 탭해 송출하세요.`
-                : '';
+  const isLibraryHome = step === 'input';
 
-  const showMainTabs = step === 'input';
+  const subtitle = isLibraryHome
+    ? '제목·아티스트로 검색하거나 장르를 골라 곡을 찾으세요.'
+    : step === 'analyzing'
+      ? '올린 악보를 분석하고 있습니다. 완료되면 검수 화면으로 이어집니다.'
+      : step === 'candidates'
+        ? '라이브러리 후보 중 곡을 선택하세요.'
+        : step === 'detail'
+          ? '저장된 곡입니다. PP 빌드·송출 또는 가사 수정을 선택하세요.'
+          : step === 'edit'
+            ? isDraftSession
+              ? '제목·장르·구간을 검수한 뒤 라이브러리에 저장하세요.'
+              : '장르·구간을 수정한 뒤 저장하세요. 빌드는 상세 화면에서 진행합니다.'
+            : step === 'build'
+              ? `${songTitle || '곡'} — PP 빌드 후 슬라이드를 탭해 송출하세요.`
+              : '';
 
   return (
-    <Card title="찬양" subtitle={subtitle}>
+    <>
+    <Card
+      title={isLibraryHome ? undefined : '찬양'}
+      subtitle={isLibraryHome ? undefined : subtitle}
+      className={isLibraryHome ? styles.libraryCard : undefined}
+    >
       {showDraftFlow ? <SongDraftFlowSteps current={draftFlowStep} /> : null}
       {connectedChecked && !connected ? (
         <StatusBanner tone="warning">
@@ -435,41 +437,6 @@ export function SongPage() {
             ? ` ${probe.data?.agent_message ?? probe.data?.message}`
             : ''}
         </StatusBanner>
-      ) : null}
-
-      {showMainTabs ? (
-        <div className={styles.mainTabs} role="tablist" aria-label="찬양 모드">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mainTab === 'library'}
-            className={[
-              styles.mainTab,
-              mainTab === 'library' ? styles.mainTabActive : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => setMainTab('library')}
-          >
-            <span className={styles.mainTabLabel}>라이브러리</span>
-            <span className={styles.mainTabDesc}>장르별 곡 목록</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mainTab === 'upload'}
-            className={[
-              styles.mainTab,
-              mainTab === 'upload' ? styles.mainTabActive : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            onClick={() => setMainTab('upload')}
-          >
-            <span className={styles.mainTabLabel}>신규·악보</span>
-            <span className={styles.mainTabDesc}>악보 업로드 · AI 분석</span>
-          </button>
-        </div>
       ) : null}
 
       {analyze.job?.status === 'error' ? (
@@ -498,15 +465,11 @@ export function SongPage() {
 
       {loadingSong ? <Spinner centered /> : null}
 
-      {!isAnalyzing && !loadingSong && step === 'input' && mainTab === 'library' ? (
+      {!isAnalyzing && !loadingSong && isLibraryHome ? (
         <SongLibraryPanel
           disabled={actionsDisabled}
           onSelect={(id) => void loadSongDetail(id, 'input')}
         />
-      ) : null}
-
-      {!loadingSong && step === 'input' && mainTab === 'upload' ? (
-        <SongUploadPage disabled={isAnalyzing} onSubmit={handleAnalyze} />
       ) : null}
 
       {step === 'analyzing' && lastUploadPayload ? (
@@ -619,6 +582,60 @@ export function SongPage() {
         />
       ) : null}
 
+    </Card>
+
+      {isLibraryHome && !uploadModalOpen ? (
+        <button
+          type="button"
+          className={styles.fab}
+          aria-label="신규 악보 추가"
+          disabled={isAnalyzing}
+          onClick={() => setUploadModalOpen(true)}
+        >
+          <span className={styles.fabIcon} aria-hidden>
+            +
+          </span>
+        </button>
+      ) : null}
+
+      {uploadModalOpen && isLibraryHome ? (
+        <div
+          className={styles.uploadModalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="upload-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setUploadModalOpen(false);
+            }
+          }}
+        >
+          <div className={styles.uploadModal}>
+            <header className={styles.uploadModalHeader}>
+              <h2 id="upload-modal-title" className={styles.uploadModalTitle}>
+                신규 악보
+              </h2>
+              <button
+                type="button"
+                className={styles.uploadModalClose}
+                aria-label="닫기"
+                onClick={() => setUploadModalOpen(false)}
+              >
+                ✕
+              </button>
+            </header>
+            <div className={styles.uploadModalBody}>
+              <SongDraftFlowSteps current="upload" />
+              <SongUploadPage
+                variant="modal"
+                disabled={isAnalyzing}
+                onSubmit={handleUploadSubmit}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {reanalyzeConfirmOpen ? (
         <div
           className={styles.modalBackdrop}
@@ -653,6 +670,6 @@ export function SongPage() {
           </div>
         </div>
       ) : null}
-    </Card>
+    </>
   );
 }

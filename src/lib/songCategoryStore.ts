@@ -161,6 +161,39 @@ export function addCustomCategory(label: string): {
   return { ok: true, category: row };
 }
 
+export function updateCustomCategory(
+  id: `custom:${string}`,
+  label: string,
+): { ok: true } | { ok: false; message: string } {
+  const trimmed = label.trim();
+  if (!trimmed) {
+    return { ok: false, message: '카테고리 이름을 입력하세요.' };
+  }
+  if (trimmed.length > 24) {
+    return { ok: false, message: '이름은 24자 이하로 입력하세요.' };
+  }
+
+  const existing = readCustomRaw();
+  const index = existing.findIndex((row) => row.id === id);
+  if (index < 0) {
+    return { ok: false, message: '카테고리를 찾을 수 없습니다.' };
+  }
+
+  const builtins = BUILTIN_CATEGORY_DEFS.map((d) => d.label);
+  if (builtins.includes(trimmed)) {
+    return { ok: false, message: '기본 장르와 같은 이름은 사용할 수 없습니다.' };
+  }
+
+  if (existing.some((row) => row.id !== id && row.label === trimmed)) {
+    return { ok: false, message: '이미 있는 카테고리입니다.' };
+  }
+
+  const next = [...existing];
+  next[index] = { ...next[index], label: trimmed };
+  writeCustomRaw(next);
+  return { ok: true };
+}
+
 export function removeCustomCategory(id: `custom:${string}`): void {
   writeCustomRaw(readCustomRaw().filter((r) => r.id !== id));
 }

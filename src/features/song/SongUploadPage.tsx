@@ -13,6 +13,7 @@ export interface SongUploadPayload {
 
 interface SongUploadPageProps {
   disabled?: boolean;
+  variant?: 'page' | 'modal';
   onSubmit: (payload: SongUploadPayload) => void;
 }
 
@@ -75,6 +76,7 @@ function clipboardHasNonImageContent(clipboardData: DataTransfer): boolean {
 
 export function SongUploadPage({
   disabled = false,
+  variant = 'page',
   onSubmit,
 }: SongUploadPageProps) {
   const pasteZoneRef = useRef<HTMLDivElement>(null);
@@ -137,15 +139,28 @@ export function SongUploadPage({
 
   const canSubmit = !disabled && Boolean(imageData);
 
+  const rootClass = [
+    styles.root,
+    variant === 'modal' ? styles.rootModal : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={styles.root}>
+    <div className={rootClass}>
       <div className={styles.field}>
         <span className={styles.label} id="song-image-label">
-          악보 이미지 (JPEG·PNG·WebP, ~4MB)
+          악보 이미지
+          <span className={styles.labelMeta}>JPEG · PNG · WebP · 4MB 이하</span>
         </span>
         <div
           ref={pasteZoneRef}
-          className={styles.pasteZone}
+          className={[
+            styles.pasteZone,
+            imageData ? styles.pasteZoneFilled : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
           tabIndex={disabled ? -1 : 0}
           role="group"
           aria-labelledby="song-image-label"
