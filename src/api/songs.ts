@@ -2,12 +2,14 @@ import { apiFetch, isMockMode } from './client';
 import { normalizeSongDetail } from './normalize';
 import {
   mockCreateSong,
+  mockDeleteSong,
   mockFetchSong,
   mockFetchSongs,
   mockUpdateSongSections,
 } from './mock';
 import type {
   CreateSongRequest,
+  DeleteSongResponse,
   SongCategory,
   SongDetail,
   SongListResponse,
@@ -77,5 +79,15 @@ export async function updateSongSections(
       method: 'PUT',
       body: JSON.stringify(body),
     },
+  );
+}
+
+export async function deleteSong(songId: string): Promise<DeleteSongResponse> {
+  if (isMockMode()) {
+    return mockDeleteSong(songId);
+  }
+  return apiFetch<DeleteSongResponse>(
+    `/api/v1/songs/${encodeURIComponent(songId)}`,
+    { method: 'DELETE' },
   );
 }

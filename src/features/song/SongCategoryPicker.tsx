@@ -95,7 +95,9 @@ export function SongCategoryPicker({
         </div>
       ) : null}
 
-      {showManage ? <SongCategoryManage disabled={disabled} /> : null}
+      {showManage ? (
+        <SongCategoryManage disabled={disabled} layout="block" />
+      ) : null}
     </fieldset>
   );
 }

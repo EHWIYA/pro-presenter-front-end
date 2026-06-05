@@ -23,10 +23,12 @@ interface SongDetailViewProps {
   sections: SongSection[];
   disabled?: boolean;
   buildDisabled?: boolean;
+  deletePending?: boolean;
   backLabel?: string;
   onBuild: () => void;
   onEdit: () => void;
   onBack: () => void;
+  onDelete?: () => void;
 }
 
 export function SongDetailView({
@@ -36,10 +38,12 @@ export function SongDetailView({
   sections,
   disabled = false,
   buildDisabled = false,
+  deletePending = false,
   backLabel = '목록으로',
   onBuild,
   onEdit,
   onBack,
+  onDelete,
 }: SongDetailViewProps) {
   const safeSections = sections ?? [];
 
@@ -100,6 +104,16 @@ export function SongDetailView({
         <Button variant="secondary" fullWidth disabled={disabled} onClick={onEdit}>
           가사·구간·장르 수정
         </Button>
+        {onDelete ? (
+          <Button
+            variant="danger"
+            fullWidth
+            disabled={disabled || deletePending}
+            onClick={onDelete}
+          >
+            {deletePending ? '삭제 중…' : '라이브러리에서 삭제'}
+          </Button>
+        ) : null}
         <Button variant="secondary" fullWidth disabled={disabled} onClick={onBack}>
           {backLabel}
         </Button>

@@ -1,8 +1,11 @@
 import type {
   AnalyzeResponse,
+  DeleteSongCategoryResponse,
   SongAnalyzeRequest,
   SongBuildRequest,
   SongBuildResponse,
+  SongCategoriesResponse,
+  SongCategoryRecord,
   SongDetail,
   SongJobResponse,
   SongListResponse,
@@ -16,6 +19,7 @@ import type {
   WorshipTriggerRequest,
   WorshipTriggerResponse,
 } from './types';
+import { slugifyCategoryLabel } from '@/lib/songCategoryStore';
 
 const MOCK_VENUES: Venue[] = [
   { id: 'hwiya-pc', name: '개발·테스트 PC', description: 'E2E 검증' },
@@ -362,6 +366,18 @@ export async function mockUpdateSongSections(
   };
 }
 
+export async function mockDeleteSong(
+  songId: string,
+): Promise<import('./types').DeleteSongResponse> {
+  await delay(200);
+  const idx = MOCK_LIBRARY_SONGS.findIndex((s) => s.songId === songId);
+  if (idx < 0) {
+    throw new Error('곡을 찾을 수 없습니다.');
+  }
+  MOCK_LIBRARY_SONGS.splice(idx, 1);
+  return { songId, deleted: true };
+}
+
 export async function mockCreateSong(body: {
   title: string;
   sections: SongSection[];
@@ -418,6 +434,7 @@ export async function mockAnalyzeSong(
       candidates: MOCK_LIBRARY_SONGS.map((s) => ({
         songId: s.songId,
         title: s.title,
+        category: s.category,
         sectionCount: s.sections.length,
         updatedAt: s.updatedAt,
       })),
@@ -510,4 +527,85 @@ export async function mockBuildSong(
     total_slide_count: baseIndex + sections.length,
     message: 'mock build-song ok',
   };
+}
+
+const MOCK_CUSTOM_CATEGORIES: SongCategoryRecord[] = [];
+
+function mockBuiltinCategories(): SongCategoriesResponse['builtin'] {
+  return ['praise', 'hymn', 'special'];
+}
+
+export async function mockFetchSongCategories(): Promise<SongCategoriesResponse> {
+  await delay(150);
+  return {
+    builtin: mockBuiltinCategories(),
+    custom: MOCK_CUSTOM_CATEGORIES.map((row) => ({ ...row })),
+  };
+}
+
+export async function mockCreateSongCategory(
+  label: string,
+): Promise<SongCategoryRecord> {
+  await delay(200);
+  const trimmed = label.trim();
+  if (!trimmed) throw new Error('label이 비어 있습니다.');
+  if (trimmed.length > 24) throw new Error('이름은 24자 이하로 입력하세요.');
+  const builtins = ['찬양', '성가곡', '특송'];
+  if (builtins.includes(trimmed)) {
+    throw new Error('기본 카테고리와 동일한 라벨은 사용할 수 없습니다.');
+  }
+  const slug = slugifyCategoryLabel(trimmed);
+  if (!slug) throw new Error('label에서 유효한 slug를 생성할 수 없습니다.');
+  const id = `custom:${slug}` as `custom:${string}`;
+  if (MOCK_CUSTOM_CATEGORIES.some((row) => row.id === id)) {
+    const err = new Error('category_exists');
+    (err as Error & { status?: number }).status = 409;
+    throw err;
+  }
+  const now = new Date().toISOString();
+  const row: SongCategoryRecord = {
+    id,
+    label: trimmed,
+    createdAt: now,
+    updatedAt: now,
+  };
+  MOCK_CUSTOM_CATEGORIES.push(row);
+  return { ...row };
+}
+
+export async function mockUpdateSongCategory(
+  id: `custom:${string}`,
+  label: string,
+): Promise<SongCategoryRecord> {
+  await delay(200);
+  const index = MOCK_CUSTOM_CATEGORIES.findIndex((row) => row.id === id);
+  if (index < 0) throw new Error('카테고리를 찾을 수 없습니다.');
+  const trimmed = label.trim();
+  if (!trimmed || trimmed.length > 24) {
+    throw new Error('이름은 24자 이하로 입력하세요.');
+  }
+  const next = { ...MOCK_CUSTOM_CATEGORIES[index], label: trimmed, updatedAt: new Date().toISOString() };
+  MOCK_CUSTOM_CATEGORIES[index] = next;
+  return { ...next };
+}
+
+export async function mockDeleteSongCategory(
+  id: `custom:${string}`,
+): Promise<DeleteSongCategoryResponse> {
+  await delay(200);
+  const index = MOCK_CUSTOM_CATEGORIES.findIndex((row) => row.id === id);
+  if (index < 0) throw new Error('카테고리를 찾을 수 없습니다.');
+  const songCount = MOCK_LIBRARY_SONGS.filter((song) => song.category === id).length;
+  if (songCount > 0) {
+    const err = new Error('이 카테고리를 사용하는 곡이 있습니다.');
+    (err as Error & { status?: number; body?: unknown }).status = 409;
+    (err as Error & { body?: unknown }).body = {
+      detail: 'category_in_use',
+      message: '이 카테고리를 사용하는 곡이 있습니다.',
+      songCount,
+    };
+    throw err;
+  }
+  MOCK_CUSTOM_CATEGORIES.splice(index, 1);
+  return { deleted: true };
 }

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Spinner, StatusBanner } from '@/components';
 import type {
   SongAnalyzeRequest,
@@ -11,13 +11,18 @@ import { fetchSong } from '@/api';
 import {
   useBuildSong,
   useCreateSong,
+  useDeleteSong,
   useSongAnalyze,
   useTriggerSlide,
   useUpdateSongSections,
+  useInternalStepBack,
+  useRequireVenue,
+  useTabReselect,
   useVenueProbe,
   useVenueStatuses,
 } from '@/hooks';
-import { getSelectedVenueId } from '@/lib/session';
+import { TAB_PATHS } from '@/lib/tabRoutes';
+import { queryKeys } from '@/lib/queryKeys';
 import { SongBuildResult } from './SongBuildResult';
 import { SongCandidatesList } from './SongCandidatesList';
 import { SongDetailView } from './SongDetailView';
@@ -33,8 +38,8 @@ type SongStep = 'input' | 'analyzing' | 'candidates' | 'detail' | 'edit' | 'buil
 type DetailReturnStep = 'input' | 'candidates';
 
 export function SongPage() {
-  const navigate = useNavigate();
-  const venueId = getSelectedVenueId();
+  const queryClient = useQueryClient();
+  const venueId = useRequireVenue();
   const probe = useVenueProbe(venueId, Boolean(venueId));
   const statuses = useVenueStatuses();
   const analyze = useSongAnalyze();
@@ -42,6 +47,7 @@ export function SongPage() {
   const trigger = useTriggerSlide(venueId);
   const saveSections = useUpdateSongSections();
   const createSongMutation = useCreateSong();
+  const deleteSongMutation = useDeleteSong();
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [isDraftSession, setIsDraftSession] = useState(false);
@@ -65,6 +71,11 @@ export function SongPage() {
   const [detailReturnStep, setDetailReturnStep] =
     useState<DetailReturnStep>('input');
 
+  useEffect(() => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.songCategories });
+    void queryClient.invalidateQueries({ queryKey: ['songs'] });
+  }, [queryClient]);
+
   const venueStatus = venueId
     ? statuses.data?.find((status) => status.venue_id === venueId)
     : undefined;
@@ -76,13 +87,15 @@ export function SongPage() {
   const isAnalyzing = analyze.start.isPending || analyze.isPolling;
 
   const savePending = saveSections.isPending || createSongMutation.isPending;
+  const deletePending = deleteSongMutation.isPending;
 
   const actionsDisabled =
     !operationalReady ||
     build.isPending ||
     isAnalyzing ||
     loadingSong ||
-    savePending;
+    savePending ||
+    deletePending;
 
   const loadSongDetail = useCallback(
     async (id: string, returnStep: DetailReturnStep) => {
@@ -333,28 +346,6 @@ export function SongPage() {
     });
   }
 
-  function handleDetailBack() {
-    setSaveMessage(null);
-    setStatusMessage(null);
-    setStep(detailReturnStep);
-  }
-
-  function handleEditBack() {
-    if (isDraftSession) {
-      const ok = window.confirm(
-        '저장하지 않은 분석 결과가 사라집니다. 계속할까요?',
-      );
-      if (!ok) return;
-      handleResetFlow();
-      return;
-    }
-    if (fromLibrary && songId) {
-      setStep('detail');
-      return;
-    }
-    handleResetFlow();
-  }
-
   function handleResetFlow() {
     analyze.reset();
     build.reset();
@@ -375,21 +366,100 @@ export function SongPage() {
     setUploadModalOpen(false);
   }
 
+  const stepRef = useRef(step);
+  const detailReturnStepRef = useRef(detailReturnStep);
+  const isDraftSessionRef = useRef(isDraftSession);
+  const fromLibraryRef = useRef(fromLibrary);
+
+  stepRef.current = step;
+  detailReturnStepRef.current = detailReturnStep;
+  isDraftSessionRef.current = isDraftSession;
+  fromLibraryRef.current = fromLibrary;
+
+  const handleInternalBack = useCallback(() => {
+    const current = stepRef.current;
+
+    switch (current) {
+      case 'build':
+        setStep('detail');
+        break;
+      case 'detail':
+        setStep(detailReturnStepRef.current);
+        break;
+      case 'edit':
+        if (isDraftSessionRef.current || !fromLibraryRef.current) {
+          handleResetFlow();
+        } else {
+          setStep('detail');
+        }
+        break;
+      case 'candidates':
+        analyze.reset();
+        setStep('input');
+        break;
+      case 'analyzing':
+        handleResetFlow();
+        break;
+      default:
+        break;
+    }
+  }, [analyze]);
+
+  const { collapseInternalHistory, syncHistoryBack } = useInternalStepBack({
+    isAtRoot: step === 'input',
+    onBack: handleInternalBack,
+  });
+
+  useTabReselect(TAB_PATHS.song, handleResetFlow, {
+    beforeNavigate: collapseInternalHistory,
+  });
+
+  function handleDetailBack() {
+    setSaveMessage(null);
+    setStatusMessage(null);
+    if (syncHistoryBack()) return;
+    setStep(detailReturnStep);
+  }
+
+  function handleDeleteFromLibrary() {
+    if (!songId || deletePending) return;
+    const ok = window.confirm(
+      `「${songTitle}」 곡을 라이브러리에서 삭제할까요?\n삭제 후에는 목록에서 보이지 않습니다.`,
+    );
+    if (!ok) return;
+
+    deleteSongMutation.mutate(songId, {
+      onSuccess: () => {
+        handleResetFlow();
+      },
+    });
+  }
+
+  function handleEditBack() {
+    if (isDraftSession) {
+      const ok = window.confirm(
+        '저장하지 않은 분석 결과가 사라집니다. 계속할까요?',
+      );
+      if (!ok) return;
+    }
+    if (syncHistoryBack()) return;
+    if (isDraftSession) {
+      handleResetFlow();
+      return;
+    }
+    if (fromLibrary && songId) {
+      setStep('detail');
+      return;
+    }
+    handleResetFlow();
+  }
+
   function handleUploadSubmit(payload: SongUploadPayload) {
     setUploadModalOpen(false);
     handleAnalyze(payload);
   }
 
-  if (!venueId) {
-    return (
-      <Card title="찬양 라이브러리">
-        <StatusBanner tone="warning">먼저 연결 탭에서 PC를 연결하세요.</StatusBanner>
-        <Button fullWidth onClick={() => navigate('/')}>
-          PC 연결
-        </Button>
-      </Card>
-    );
-  }
+  if (!venueId) return null;
 
   const showDraftFlow =
     step === 'analyzing' || (step === 'edit' && isDraftSession);
@@ -490,6 +560,12 @@ export function SongPage() {
         />
       ) : null}
 
+      {deleteSongMutation.error && step === 'detail' ? (
+        <StatusBanner tone="error">
+          {deleteSongMutation.error.message}
+        </StatusBanner>
+      ) : null}
+
       {statusMessage && step === 'detail' ? (
         <StatusBanner tone="success">{statusMessage}</StatusBanner>
       ) : null}
@@ -502,6 +578,7 @@ export function SongPage() {
           sections={sections ?? []}
           disabled={actionsDisabled}
           buildDisabled={!operationalReady || !songId}
+          deletePending={deletePending}
           backLabel={
             detailReturnStep === 'candidates' ? '후보 목록으로' : '목록으로'
           }
@@ -510,6 +587,9 @@ export function SongPage() {
             setStatusMessage(null);
             setStep('edit');
           }}
+          onDelete={
+            fromLibrary && songId ? handleDeleteFromLibrary : undefined
+          }
           onBack={() => {
             setStatusMessage(null);
             handleDetailBack();

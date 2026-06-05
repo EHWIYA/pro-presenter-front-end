@@ -1,5 +1,6 @@
 import type { AnalyzeCandidates } from '@/api';
 import { Button, StatusBanner } from '@/components';
+import { SongCategoryBadge } from './SongCategoryBadge';
 import styles from './SongLibraryPanel.module.css';
 
 interface SongCandidatesListProps {
@@ -38,7 +39,12 @@ export function SongCandidatesList({
               disabled={disabled}
               onClick={() => onSelect(item.songId)}
             >
-              <span className={styles.itemTitle}>{item.title}</span>
+              <div className={styles.itemTop}>
+                {item.category ? (
+                  <SongCategoryBadge category={item.category} />
+                ) : null}
+                <span className={styles.itemTitle}>{item.title}</span>
+              </div>
               <span className={styles.itemMeta}>
                 구간 {item.sectionCount} · {formatUpdatedAt(item.updatedAt)}
               </span>

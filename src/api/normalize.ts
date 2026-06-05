@@ -81,9 +81,16 @@ export function parseAnalyzeResponse(data: Record<string, unknown>): AnalyzeResp
     const candidates = Array.isArray(data.candidates)
       ? data.candidates.map((c) => {
           const row = c as Record<string, unknown>;
+          const tags = Array.isArray(row.tags)
+            ? row.tags.map((t) => String(t))
+            : [];
+          const categoryRaw = row.category ?? row.genre;
           return {
             songId: asString(row.songId) ?? '',
             title: asString(row.title) ?? '',
+            ...(categoryRaw !== undefined
+              ? { category: normalizeSongCategory(categoryRaw, tags) }
+              : {}),
             sectionCount: asNumber(row.sectionCount) ?? 0,
             updatedAt: asString(row.updatedAt) ?? '',
           };

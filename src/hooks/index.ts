@@ -13,3 +13,7 @@ export { useSongs, useSongDetail, useDebouncedValue } from './useSongs';
 export { useSongCategories } from './useSongCategories';
 export { useCreateSong } from './useCreateSong';
 export { useUpdateSongSections } from './useUpdateSongSections';
+export { useDeleteSong } from './useDeleteSong';
+export { useTabReselect } from './useTabReselect';
+export { useRequireVenue } from './useRequireVenue';
+export { useInternalStepBack } from './useInternalStepBack';

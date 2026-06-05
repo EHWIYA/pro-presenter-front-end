@@ -3,7 +3,13 @@ export { fetchVenues, fetchVenueStatuses, probeVenue } from './venues';
 export { fetchCurrentPresentation, fetchVenuePresentations } from './presentations';
 export { buildWorship, triggerSlide } from './worship';
 export { analyzeSong, buildSong, getSongJob } from './song';
-export { createSong, fetchSongs, fetchSong, updateSongSections } from './songs';
+export {
+  createSongCategory,
+  deleteSongCategory,
+  fetchSongCategories,
+  updateSongCategory,
+} from './songCategories';
+export { createSong, deleteSong, fetchSongs, fetchSong, updateSongSections } from './songs';
 export {
   normalizeBuildResponse,
   normalizeSongDetail,
@@ -29,6 +35,10 @@ export type {
   BuiltinSongCategory,
   SongCategory,
   CreateSongRequest,
+  DeleteSongCategoryResponse,
+  DeleteSongResponse,
+  SongCategoriesResponse,
+  SongCategoryRecord,
   SongDetail,
   SongJobResponse,
   SongListItem,

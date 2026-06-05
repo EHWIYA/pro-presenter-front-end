@@ -29,6 +29,9 @@ export function useSongs(query: string, category?: SongCategory) {
     }),
     queryFn: () =>
       fetchSongs({ q: debouncedQ, category, limit: 20, offset: 0 }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 }
 

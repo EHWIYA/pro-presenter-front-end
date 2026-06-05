@@ -7,16 +7,32 @@ import styles from './SongCategoryManage.module.css';
 
 interface SongCategoryManageProps {
   disabled?: boolean;
-  triggerLabel?: string;
-  triggerVariant?: 'link' | 'button';
+  /** inline: 필터 옆 · block: 폼 하단 전체 너비 */
+  layout?: 'inline' | 'block';
+}
+
+function ManageIcon() {
+  return (
+    <svg
+      className={styles.triggerIcon}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <path d="M4 6h16M4 12h10M4 18h16" />
+      <circle cx="17" cy="12" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  );
 }
 
 export function SongCategoryManage({
   disabled = false,
-  triggerLabel = '카테고리 관리',
-  triggerVariant = 'link',
+  layout = 'inline',
 }: SongCategoryManageProps) {
-  const { defs, addCategory, updateCategory, removeCategory } =
+  const { defs, addCategory, updateCategory, removeCategory, isLoading, isMutating } =
     useSongCategories();
   const [open, setOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -51,13 +67,14 @@ export function SongCategoryManage({
 
   function handleAdd() {
     setMessage(null);
-    const result = addCategory(newName);
-    if (!result.ok) {
-      setMessage(result.message);
-      return;
-    }
-    setNewName('');
-    setMessage('카테고리를 추가했습니다.');
+    void addCategory(newName).then((result) => {
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
+      }
+      setNewName('');
+      setMessage('카테고리를 추가했습니다.');
+    });
   }
 
   function startEdit(def: SongCategoryDef) {
@@ -75,13 +92,14 @@ export function SongCategoryManage({
 
   function handleSaveEdit(id: `custom:${string}`) {
     setMessage(null);
-    const result = updateCategory(id, editName);
-    if (!result.ok) {
-      setMessage(result.message);
-      return;
-    }
-    cancelEdit();
-    setMessage('카테고리를 수정했습니다.');
+    void updateCategory(id, editName).then((result) => {
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
+      }
+      cancelEdit();
+      setMessage('카테고리를 수정했습니다.');
+    });
   }
 
   function handleRemove(def: SongCategoryDef) {
@@ -91,9 +109,16 @@ export function SongCategoryManage({
     if (editingId === def.id) {
       cancelEdit();
     }
-    removeCategory(def.id as `custom:${string}`);
-    setMessage('카테고리를 삭제했습니다.');
+    void removeCategory(def.id as `custom:${string}`).then((result) => {
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
+      }
+      setMessage('카테고리를 삭제했습니다.');
+    });
   }
+
+  const manageDisabled = disabled || isLoading || isMutating;
 
   const builtins = defs.filter((d) => d.builtin);
   const customs = defs.filter((d) => !d.builtin);
@@ -104,14 +129,16 @@ export function SongCategoryManage({
         type="button"
         className={[
           styles.trigger,
-          triggerVariant === 'button' ? styles.triggerButton : styles.triggerLink,
+          layout === 'block' ? styles.triggerBlock : '',
         ]
           .filter(Boolean)
           .join(' ')}
-        disabled={disabled}
+        disabled={manageDisabled}
+        aria-label="카테고리 관리"
         onClick={() => setOpen(true)}
       >
-        {triggerLabel}
+        <ManageIcon />
+        <span className={styles.triggerText}>관리</span>
       </button>
 
       {open ? (
@@ -128,23 +155,30 @@ export function SongCategoryManage({
         >
           <div className={styles.modal}>
             <header className={styles.modalHeader}>
-              <h2 id="category-manage-title" className={styles.modalTitle}>
-                카테고리 관리
-              </h2>
+              <div className={styles.modalHeading}>
+                <h2 id="category-manage-title" className={styles.modalTitle}>
+                  카테고리 관리
+                </h2>
+                <p className={styles.modalSubtitle}>
+                  서버에 저장 · 모든 사용자와 공유됩니다
+                </p>
+              </div>
               <button
                 type="button"
                 className={styles.modalClose}
                 aria-label="닫기"
                 onClick={closeModal}
               >
-                ✕
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
               </button>
             </header>
 
             <div className={styles.modalBody}>
               <p className={styles.hint}>
-                기본·사용자 카테고리를 조회하고, 사용자 카테고리는 추가·수정·삭제할
-                수 있습니다. (현재 이 기기·브라우저에만 저장)
+                기본 카테고리는 조회만 가능하고, 사용자 카테고리는 추가·수정·삭제할
+                수 있습니다.
               </p>
 
               <section className={styles.section} aria-labelledby="builtin-cats">
@@ -157,7 +191,7 @@ export function SongCategoryManage({
                     <CategoryRow
                       key={def.id}
                       def={def}
-                      disabled={disabled}
+                      disabled={manageDisabled}
                       editing={false}
                       editName=""
                       onEditNameChange={() => {}}
@@ -181,7 +215,7 @@ export function SongCategoryManage({
                       <CategoryRow
                         key={def.id}
                         def={def}
-                        disabled={disabled}
+                        disabled={manageDisabled}
                         editing={editingId === def.id}
                         editName={editName}
                         onEditNameChange={setEditName}
@@ -211,14 +245,14 @@ export function SongCategoryManage({
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="예: 주일 1부, 청년부"
                     maxLength={24}
-                    disabled={disabled}
+                    disabled={manageDisabled}
                     aria-label="새 카테고리 이름"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleAdd();
                     }}
                   />
                   <Button
-                    disabled={disabled || !newName.trim()}
+                    disabled={manageDisabled || !newName.trim()}
                     onClick={handleAdd}
                   >
                     추가
@@ -259,16 +293,10 @@ function CategoryRow({
   onRemove,
 }: CategoryRowProps) {
   return (
-    <li className={styles.listItem}>
-      <span
-        className={styles.dot}
-        style={
-          {
-            '--category-accent': def.accent,
-          } as CSSProperties
-        }
-        aria-hidden
-      />
+    <li
+      className={styles.listItem}
+      style={{ '--category-accent': def.accent } as CSSProperties}
+    >
       <div className={styles.listMain}>
         {editing ? (
           <input
@@ -299,7 +327,7 @@ function CategoryRow({
         <div className={styles.rowActions}>
           <button
             type="button"
-            className={styles.saveBtn}
+            className={[styles.actionBtn, styles.actionBtnPrimary].join(' ')}
             disabled={disabled || !editName.trim()}
             onClick={onSaveEdit}
           >
@@ -307,7 +335,7 @@ function CategoryRow({
           </button>
           <button
             type="button"
-            className={styles.cancelBtn}
+            className={styles.actionBtn}
             disabled={disabled}
             onClick={onCancelEdit}
           >
@@ -318,7 +346,7 @@ function CategoryRow({
         <div className={styles.rowActions}>
           <button
             type="button"
-            className={styles.editBtn}
+            className={styles.actionBtn}
             disabled={disabled}
             onClick={onStartEdit}
           >
@@ -326,7 +354,7 @@ function CategoryRow({
           </button>
           <button
             type="button"
-            className={styles.removeBtn}
+            className={[styles.actionBtn, styles.actionBtnDanger].join(' ')}
             disabled={disabled}
             onClick={onRemove}
           >

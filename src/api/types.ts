@@ -163,6 +163,7 @@ export type AnalyzeCandidates = {
   candidates: Array<{
     songId: string;
     title: string;
+    category?: SongCategory;
     sectionCount: number;
     updatedAt: string;
   }>;
@@ -273,4 +274,25 @@ export interface CreateSongRequest {
   title: string;
   sections: SongSection[];
   category?: SongCategory;
+}
+
+export interface DeleteSongResponse {
+  songId: string;
+  deleted: true;
+}
+
+export interface SongCategoryRecord {
+  id: `custom:${string}`;
+  label: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SongCategoriesResponse {
+  builtin: BuiltinSongCategory[];
+  custom: SongCategoryRecord[];
+}
+
+export interface DeleteSongCategoryResponse {
+  deleted: true;
 }

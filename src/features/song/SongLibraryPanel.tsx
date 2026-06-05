@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Spinner, StatusBanner } from '@/components';
 import type { SongListItem } from '@/api';
-import { useSongs } from '@/hooks';
+import { useSongCategories, useSongs } from '@/hooks';
 import { SongCategoryBadge } from './SongCategoryBadge';
 import {
   SongCategoryFilter,
@@ -33,9 +33,20 @@ export function SongLibraryPanel({
   const category =
     categoryFilter === 'all' ? undefined : categoryFilter;
   const songs = useSongs(query, category);
+  const {
+    refetch: refetchCategories,
+    isFetching: categoriesFetching,
+    error: categoriesError,
+  } = useSongCategories();
 
   const items = songs.data?.items ?? [];
   const total = songs.data?.total ?? 0;
+  const listRefreshing = songs.isFetching || categoriesFetching;
+
+  function handleRefresh() {
+    void songs.refetch();
+    void refetchCategories();
+  }
 
   return (
     <div className={styles.root}>
@@ -47,15 +58,13 @@ export function SongLibraryPanel({
       </header>
 
       <div className={styles.filters}>
-        <div className={styles.categoryBlock}>
+        <div className={styles.filterRow}>
           <SongCategoryFilter
             value={categoryFilter}
             onChange={setCategoryFilter}
             disabled={disabled}
           />
-          <div className={styles.manageAlign}>
-            <SongCategoryManage disabled={disabled} />
-          </div>
+          <SongCategoryManage disabled={disabled} layout="inline" />
         </div>
 
         <div className={styles.searchBlock}>
@@ -83,12 +92,29 @@ export function SongLibraryPanel({
             />
           </div>
           {!songs.isLoading && !songs.error ? (
-            <p className={styles.resultCount} aria-live="polite">
-              {total}곡
-            </p>
+            <div className={styles.resultRow}>
+              <p className={styles.resultCount} aria-live="polite">
+                {total}곡
+              </p>
+              <button
+                type="button"
+                className={styles.refreshBtn}
+                disabled={disabled || listRefreshing}
+                aria-label="목록 새로고침"
+                onClick={handleRefresh}
+              >
+                {listRefreshing ? '…' : '↻'}
+              </button>
+            </div>
           ) : null}
         </div>
       </div>
+
+      {categoriesError ? (
+        <StatusBanner tone="warning">
+          카테고리 목록을 불러오지 못했습니다. 장르 필터가 제한될 수 있습니다.
+        </StatusBanner>
+      ) : null}
 
       {songs.isLoading ? <Spinner centered /> : null}
       {songs.error ? (

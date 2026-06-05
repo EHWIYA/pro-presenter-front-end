@@ -16,6 +16,7 @@ export const queryKeys = {
     offset: number;
   }) => ['songs', params] as const,
   song: (songId: string) => ['song', songId] as const,
+  songCategories: ['song-categories'] as const,
   buildSong: (venueId: string, songId: string | null) =>
     ['build-song', venueId, songId] as const,
 };
