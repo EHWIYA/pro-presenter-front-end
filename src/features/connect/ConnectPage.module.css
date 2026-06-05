@@ -1,7 +1,129 @@
-.refreshing {
-  margin: 0 0 var(--space-sm);
+.toastHost {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0.875rem var(--space-md) calc(0.875rem + env(safe-area-inset-bottom, 0));
+  background: var(--color-surface);
+  border-top: 2px solid var(--color-gold);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(110%);
+  opacity: 0;
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s ease;
+}
+
+.toastVisible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toastChecking {
+  background: color-mix(in srgb, var(--color-surface-raised) 55%, var(--color-surface));
+}
+
+.toastConnected {
+  border-top-color: color-mix(in srgb, var(--color-success) 55%, var(--color-gold));
+  background: color-mix(in srgb, var(--color-success) 6%, var(--color-surface));
+}
+
+.toastIndicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 0 2px;
+}
+
+.toastDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-primary-accent);
+  opacity: 0.28;
+  animation: toastDotPulse 1.6s ease-in-out infinite;
+}
+
+.toastDot:nth-child(2) {
+  animation-delay: 0.22s;
+}
+
+.toastDot:nth-child(3) {
+  animation-delay: 0.44s;
+}
+
+.toastCheck {
+  position: relative;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  border: 1.5px solid color-mix(in srgb, var(--color-success) 40%, var(--color-border));
+}
+
+.toastCheck::after {
+  content: '';
+  position: absolute;
+  left: 0.28rem;
+  top: 0.12rem;
+  width: 0.38rem;
+  height: 0.66rem;
+  border-right: 1.5px solid var(--color-success);
+  border-bottom: 1.5px solid var(--color-success);
+  transform: rotate(45deg);
+}
+
+.toastCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toastTitle {
   font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  letter-spacing: var(--letter-tight);
+}
+
+.toastHint {
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+@keyframes toastDotPulse {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: none;
+  }
+
+  .toastDot {
+    animation: none;
+    opacity: 0.55;
+  }
 }
 
 .list {

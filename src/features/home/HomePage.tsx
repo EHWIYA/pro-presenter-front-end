@@ -1,17 +1,20 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Card, Spinner, StatusBanner } from '@/components';
+import { Button, Card, StatusBanner } from '@/components';
 import {
   useCurrentPresentation,
+  useRequireVenue,
+  useTabReselect,
   useVenuePresentations,
   useVenues,
 } from '@/hooks';
-import { getSelectedVenueId } from '@/lib/session';
+import { connectOverlay } from '@/lib/connectOverlay';
+import { TAB_PATHS, navigateToConnect, navigateToTab } from '@/lib/tabRoutes';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
   const navigate = useNavigate();
-  const venueId = getSelectedVenueId();
+  const venueId = useRequireVenue();
   const { data: venues } = useVenues();
   const inventory = useVenuePresentations(venueId);
   const currentPreview = useCurrentPresentation(venueId);
@@ -19,15 +22,35 @@ export function HomePage() {
   const venueName =
     venues?.find((v) => v.id === venueId)?.name ?? venueId ?? '미선택';
 
+  const isHomeLoading =
+    inventory.isPending || currentPreview.isPending;
+
+  const handleHomeReselect = useCallback(() => {
+    void inventory.refetch();
+    void currentPreview.refetch();
+  }, [currentPreview, inventory]);
+
+  useTabReselect(TAB_PATHS.home, handleHomeReselect);
+
   useEffect(() => {
-    if (!venueId) {
-      navigate('/', { replace: true });
-    }
-  }, [venueId, navigate]);
+    if (!venueId || isHomeLoading) return;
+
+    let innerFrame = 0;
+    const outerFrame = requestAnimationFrame(() => {
+      innerFrame = requestAnimationFrame(() => {
+        connectOverlay.hide();
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(outerFrame);
+      cancelAnimationFrame(innerFrame);
+    };
+  }, [venueId, isHomeLoading]);
 
   if (!venueId) return null;
 
-  if (inventory.isLoading) return <Spinner centered />;
+  if (isHomeLoading) return null;
 
   const presentations = inventory.data?.presentations ?? [];
 
@@ -117,13 +140,23 @@ export function HomePage() {
         >
           현재 작업 새로고침
         </Button>
-        <Button variant="secondary" fullWidth onClick={() => navigate('/')}>
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={() => navigateToConnect(navigate)}
+        >
           PC 연결 다시 확인
         </Button>
-        <Button fullWidth onClick={() => navigate('/worship/build')}>
+        <Button
+          fullWidth
+          onClick={() => navigateToTab(navigate, TAB_PATHS.build)}
+        >
           성경 구절 빌드
         </Button>
-        <Button fullWidth onClick={() => navigate('/worship/song')}>
+        <Button
+          fullWidth
+          onClick={() => navigateToTab(navigate, TAB_PATHS.song)}
+        >
           찬양 악보
         </Button>
       </div>

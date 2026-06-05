@@ -3,6 +3,7 @@
   /* 주보 라이트 — 딥 그린 · 슬레이트 블루 · 스카이 블루 · 소프트 골드 */
   --color-primary: #2e4b3e;
   --color-primary-hover: #243d32;
+  --color-primary-accent: #2e4b3e;
   --color-heading: #2e4b3e;
   --color-secondary: #5a6f7d;
   --color-secondary-surface: #e8edf0;
@@ -41,12 +42,13 @@
   --letter-wide: 0.01em;
   --tap-min: 44px;
   --header-h: 52px;
-  --nav-h: 56px;
+  --nav-h: 58px;
 }
 
 [data-theme='dark'] {
-  --color-primary: #2e4b3e;
-  --color-primary-hover: #3a5c4d;
+  --color-primary: #3a5c4d;
+  --color-primary-hover: #466b58;
+  --color-primary-accent: #8ed0b0;
   --color-heading: #ededed;
   --color-secondary: #9499a4;
   --color-secondary-surface: #2c2c2c;

@@ -44,20 +44,55 @@
 .main {
   flex: 1;
   padding: var(--space-md);
-  padding-bottom: calc(var(--nav-h) + var(--space-md));
+  padding-bottom: calc(var(--nav-h) + var(--space-md) + var(--space-sm));
+}
+
+.mainNoNav {
+  padding-bottom: var(--space-md);
 }
 
 .nav {
   position: fixed;
+  inset-inline: 0;
   bottom: 0;
-  left: 0;
-  right: 0;
   z-index: 10;
+  padding: 0 var(--space-sm) calc(var(--space-xs) + env(safe-area-inset-bottom, 0));
+  pointer-events: none;
+}
+
+.navBar {
+  position: relative;
+  pointer-events: auto;
   display: flex;
-  height: var(--nav-h);
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  align-items: stretch;
+  min-height: var(--nav-h);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow:
+    0 -6px 24px color-mix(in srgb, var(--color-primary) 7%, transparent),
+    var(--shadow-sm);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+.navBar::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 18%,
+    var(--color-gold) 50%,
+    color-mix(in srgb, var(--color-gold) 45%, transparent) 82%,
+    transparent 100%
+  );
+  pointer-events: none;
 }
 
 .navLink {
@@ -66,18 +101,175 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.1875rem;
+  gap: 0.2rem;
+  padding: 0.4375rem 0.125rem 0.3125rem;
   color: var(--color-text-muted);
   text-decoration: none;
   min-height: var(--tap-min);
+  transition: color 0.2s ease;
 }
 
-.navLinkActive {
-  color: var(--color-accent);
+.navIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: var(--radius-md);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.navIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.72;
+  transition: opacity 0.2s ease;
+}
+
+.navIcon svg {
+  fill: currentColor;
 }
 
 .navLabel {
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.navLinkActive {
+  color: var(--color-primary-accent);
+}
+
+.navLinkActive .navIconWrap {
+  background: color-mix(in srgb, var(--color-primary-accent) 16%, var(--color-surface));
+}
+
+.navLinkActive .navIcon {
+  opacity: 1;
+}
+
+.navLinkActive .navLabel {
+  font-weight: 700;
+}
+
+.navLinkFeatured.navLinkActive .navIconWrap {
+  background: color-mix(in srgb, var(--color-gold) 16%, var(--color-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-gold) 32%, var(--color-border));
+}
+
+.navLinkFeatured.navLinkActive {
+  color: color-mix(in srgb, var(--color-primary-accent) 52%, var(--color-gold));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navLink,
+  .navIconWrap,
+  .navIcon {
+    transition: none;
+  }
+}
+
+.enterOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--color-overlay);
+  touch-action: none;
+  animation: enterOverlayIn 0.22s ease;
+}
+
+.enterPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  width: min(100%, 17.5rem);
+  padding: var(--space-lg) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 2px solid var(--color-gold);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.enterIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-xs);
+}
+
+.enterDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary-accent);
+  opacity: 0.28;
+  animation: enterDotPulse 1.6s ease-in-out infinite;
+}
+
+.enterDot:nth-child(2) {
+  animation-delay: 0.22s;
+}
+
+.enterDot:nth-child(3) {
+  animation-delay: 0.44s;
+}
+
+.enterTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  letter-spacing: var(--letter-tight);
+}
+
+.enterHint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+@keyframes enterOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes enterDotPulse {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.9);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enterOverlay {
+    animation: none;
+  }
+
+  .enterDot {
+    animation: none;
+    opacity: 0.55;
+  }
 }

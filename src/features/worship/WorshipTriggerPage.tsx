@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, SlideGrid, StatusBanner } from '@/components';
 import {
   useBuildWorship,
+  useRequireVenue,
+  useTabReselect,
   useTriggerSlide,
   useVenueProbe,
   useVenueStatuses,
   useWorshipBuildCache,
 } from '@/hooks';
-import { getSelectedVenueId, getVerseText } from '@/lib/session';
+import { getVerseText } from '@/lib/session';
+import { TAB_PATHS, navigateToTab } from '@/lib/tabRoutes';
 
 export function WorshipTriggerPage() {
   const navigate = useNavigate();
-  const venueId = getSelectedVenueId();
+  const venueId = useRequireVenue();
   const verseText = getVerseText();
   const statuses = useVenueStatuses();
   const probe = useVenueProbe(venueId, Boolean(venueId));
@@ -35,6 +38,13 @@ export function WorshipTriggerPage() {
   const agentChecked = probe.isSuccess || probe.isError;
   const canOperate = connected && agentReady;
 
+  const handleTriggerReselect = useCallback(() => {
+    setLastTriggeredIndex(null);
+    setStatusMessage(null);
+  }, []);
+
+  useTabReselect(TAB_PATHS.trigger, handleTriggerReselect);
+
   function handleTrigger(index: number) {
     if (!venueId || trigger.isPending || !canOperate) return;
 
@@ -54,16 +64,7 @@ export function WorshipTriggerPage() {
     });
   }
 
-  if (!venueId) {
-    return (
-      <Card title="송출">
-        <StatusBanner tone="warning">현장을 선택하세요.</StatusBanner>
-        <Button fullWidth onClick={() => navigate('/')}>
-          PC 연결
-        </Button>
-      </Card>
-    );
-  }
+  if (!venueId) return null;
 
   if (!slideMap?.length) {
     return (
@@ -81,7 +82,11 @@ export function WorshipTriggerPage() {
         >
           {build.isPending ? '빌드 중…' : '저장된 구절로 빌드'}
         </Button>
-        <Button variant="secondary" fullWidth onClick={() => navigate('/worship/build')}>
+        <Button
+          variant="secondary"
+          fullWidth
+          onClick={() => navigateToTab(navigate, TAB_PATHS.build)}
+        >
           빌드 탭으로
         </Button>
       </Card>

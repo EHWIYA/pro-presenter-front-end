@@ -1,10 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { VenueStatus } from '@/api';
 import { Button, Card, Spinner, StatusBanner } from '@/components';
 import { useVenueStatuses, useVenues } from '@/hooks';
+import { connectOverlay } from '@/lib/connectOverlay';
+import { navigateFromConnect } from '@/lib/tabRoutes';
 import { getSelectedVenueId, setSelectedVenueId } from '@/lib/session';
 import styles from './ConnectPage.module.css';
+
+type ConnectToast = 'checking' | 'connected';
+
+const TOAST_EXIT_MS = 320;
+const CONNECTED_TOAST_MS = 2600;
 
 export function ConnectPage() {
   const navigate = useNavigate();
@@ -20,8 +27,9 @@ export function ConnectPage() {
   }
 
   function handleEnter() {
-    if (!selectedId) return;
-    navigate('/home');
+    if (!canEnter) return;
+    connectOverlay.show();
+    navigateFromConnect(navigate);
   }
 
   const statusMap = useMemo(() => {
@@ -33,6 +41,64 @@ export function ConnectPage() {
   const selectedStatus = selectedId ? statusMap.get(selectedId) : undefined;
   const canEnter = Boolean(selectedId && selectedStatus?.connected);
   const selectedAgentReachable = selectedStatus?.agent_reachable;
+  const selectedVenueName =
+    venues?.find((venue) => venue.id === selectedId)?.name ?? '선택한 현장';
+
+  const [toast, setToast] = useState<ConnectToast | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const wasFetchingRef = useRef(false);
+  const connectedAtFetchStartRef = useRef(false);
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearExitTimer() {
+    if (exitTimerRef.current) {
+      clearTimeout(exitTimerRef.current);
+      exitTimerRef.current = null;
+    }
+  }
+
+  function openToast(kind: ConnectToast) {
+    clearExitTimer();
+    setToast(kind);
+    requestAnimationFrame(() => setToastVisible(true));
+  }
+
+  function closeToast(onClosed?: () => void) {
+    clearExitTimer();
+    setToastVisible(false);
+    exitTimerRef.current = setTimeout(() => {
+      setToast(null);
+      onClosed?.();
+    }, TOAST_EXIT_MS);
+  }
+
+  useEffect(() => {
+    const isFetching = statusesQuery.isFetching;
+
+    if (isFetching && !wasFetchingRef.current) {
+      connectedAtFetchStartRef.current = canEnter;
+      openToast('checking');
+    }
+
+    if (!isFetching && wasFetchingRef.current) {
+      const justConnected = canEnter && !connectedAtFetchStartRef.current;
+
+      if (justConnected) {
+        setToast('connected');
+        setToastVisible(true);
+        clearExitTimer();
+        exitTimerRef.current = setTimeout(() => {
+          closeToast();
+        }, CONNECTED_TOAST_MS);
+      } else {
+        closeToast();
+      }
+    }
+
+    wasFetchingRef.current = isFetching;
+  }, [statusesQuery.isFetching, canEnter]);
+
+  useEffect(() => () => clearExitTimer(), []);
 
   if (isLoading) return <Spinner centered />;
   if (error) {
@@ -44,6 +110,7 @@ export function ConnectPage() {
   }
 
   return (
+    <>
     <Card
       title="PC 연결"
       subtitle="앱 진입 시 연결 상태를 자동 조회합니다. 연결 가능한 현장을 선택해 진입하세요."
@@ -54,16 +121,14 @@ export function ConnectPage() {
         </StatusBanner>
       ) : null}
 
-      {statusesQuery.isFetching && !statusesQuery.isLoading ? (
-        <p className={styles.refreshing}>연결 상태 새로고침 중…</p>
-      ) : null}
-
       <div className={styles.list} role="listbox" aria-label="현장 목록">
         {venues?.map((venue) => {
           const status = statusMap.get(venue.id);
           const isConnected = status?.connected ?? false;
           const statusLabel = isConnected ? '온라인' : '오프라인';
-          const statusTone = isConnected ? styles.statusOnline : styles.statusOffline;
+          const statusTone = isConnected
+            ? styles.statusOnline
+            : styles.statusOffline;
           const checkedAt = status?.checked_at
             ? new Date(status.checked_at).toLocaleTimeString('ko-KR')
             : '-';
@@ -110,7 +175,7 @@ export function ConnectPage() {
           disabled={!canEnter}
           onClick={handleEnter}
         >
-          홈으로 진입
+          PC 연결
         </Button>
       </div>
 
@@ -127,5 +192,43 @@ export function ConnectPage() {
         </StatusBanner>
       ) : null}
     </Card>
+
+    {toast ? (
+      <div className={styles.toastHost} aria-live="polite">
+        <div
+          className={[
+            styles.toast,
+            toast === 'checking' ? styles.toastChecking : styles.toastConnected,
+            toastVisible ? styles.toastVisible : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          role="status"
+        >
+          {toast === 'checking' ? (
+            <span className={styles.toastIndicator} aria-hidden>
+              <span className={styles.toastDot} />
+              <span className={styles.toastDot} />
+              <span className={styles.toastDot} />
+            </span>
+          ) : (
+            <span className={styles.toastCheck} aria-hidden />
+          )}
+          <div className={styles.toastCopy}>
+            <span className={styles.toastTitle}>
+              {toast === 'checking'
+                ? '연결 상태 확인 중'
+                : 'PC 연결 완료'}
+            </span>
+            <span className={styles.toastHint}>
+              {toast === 'checking'
+                ? '현장 PC 연결 상태를 살펴보고 있어요'
+                : `${selectedVenueName}에 연결되었습니다`}
+            </span>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    </>
   );
 }

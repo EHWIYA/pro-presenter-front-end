@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, SlideGrid, Spinner, StatusBanner } from '@/components';
-import { useBuildWorship, useVenueProbe, useVenueStatuses, useWorshipBuildCache } from '@/hooks';
-import { getSelectedVenueId, getVerseText, setVerseText } from '@/lib/session';
+import {
+  useBuildWorship,
+  useRequireVenue,
+  useTabReselect,
+  useVenueProbe,
+  useVenueStatuses,
+  useWorshipBuildCache,
+} from '@/hooks';
+import { getVerseText, setVerseText } from '@/lib/session';
+import { TAB_PATHS, navigateToTab } from '@/lib/tabRoutes';
 import styles from './WorshipBuildPage.module.css';
 
 export function WorshipBuildPage() {
   const navigate = useNavigate();
-  const venueId = getSelectedVenueId();
+  const venueId = useRequireVenue();
   const [text, setText] = useState(getVerseText);
   const statuses = useVenueStatuses();
   const probe = useVenueProbe(venueId, Boolean(venueId));
@@ -24,6 +32,13 @@ export function WorshipBuildPage() {
   const agentChecked = probe.isSuccess || probe.isError;
   const canBuild = connected && agentReady;
 
+  const handleBuildReselect = useCallback(() => {
+    setText(getVerseText());
+    build.reset();
+  }, [build]);
+
+  useTabReselect(TAB_PATHS.build, handleBuildReselect);
+
   function handleBuild() {
     if (!venueId || build.isPending || !canBuild) return;
     if (!text.trim()) return;
@@ -31,16 +46,7 @@ export function WorshipBuildPage() {
     build.mutate(text);
   }
 
-  if (!venueId) {
-    return (
-      <Card title="구절 빌드">
-        <StatusBanner tone="warning">먼저 연결 탭에서 PC를 연결하세요.</StatusBanner>
-        <Button fullWidth onClick={() => navigate('/')}>
-          PC 연결
-        </Button>
-      </Card>
-    );
-  }
+  if (!venueId) return null;
 
   return (
     <Card
@@ -99,10 +105,14 @@ export function WorshipBuildPage() {
           </StatusBanner>
           <SlideGrid
             slides={slideMap}
-            onTrigger={() => navigate('/worship/trigger')}
+            onTrigger={() => navigateToTab(navigate, TAB_PATHS.trigger)}
             disabled
           />
-          <Button variant="secondary" fullWidth onClick={() => navigate('/worship/trigger')}>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => navigateToTab(navigate, TAB_PATHS.trigger)}
+          >
             송출 탭으로
           </Button>
         </>
