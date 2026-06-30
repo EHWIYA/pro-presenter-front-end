@@ -47,8 +47,16 @@
   gap: 0.25rem;
 }
 
+.searchRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--control-h);
+  gap: var(--space-sm);
+  align-items: stretch;
+}
+
 .searchWrap {
   position: relative;
+  min-width: 0;
 }
 
 .searchIcon {
@@ -94,46 +102,73 @@
     0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
-.resultRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-}
-
-.resultCount {
-  margin: 0;
-  padding-right: 0.125rem;
-  text-align: right;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  letter-spacing: var(--letter-wide);
-}
-
 .refreshBtn {
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  min-height: var(--control-h);
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
   color: var(--color-text-muted);
-  font-size: 1rem;
-  line-height: 1;
+  box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
 
 .refreshBtn:hover:not(:disabled) {
-  color: var(--color-heading);
-  border-color: var(--color-border);
+  color: var(--color-primary-accent);
+  border-color: color-mix(in srgb, var(--color-primary-accent) 35%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary-accent) 6%, var(--color-surface));
+}
+
+.refreshBtnActive {
+  color: var(--color-primary-accent);
+  border-color: color-mix(in srgb, var(--color-primary-accent) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary-accent) 8%, var(--color-surface));
+}
+
+.refreshBtn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 
 .refreshBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  cursor: default;
+  opacity: 0.85;
+}
+
+.refreshIcon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.refreshIconSpin {
+  animation: refreshSpin 0.85s linear infinite;
+}
+
+@keyframes refreshSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.listMeta {
+  margin: calc(var(--space-sm) * -1) 0 0;
+  padding: 0 0.125rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: var(--letter-wide);
+  color: var(--color-text-muted);
 }
 
 .list {

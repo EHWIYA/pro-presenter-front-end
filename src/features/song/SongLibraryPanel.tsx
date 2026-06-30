@@ -68,45 +68,61 @@ export function SongLibraryPanel({
         </div>
 
         <div className={styles.searchBlock}>
-          <div className={styles.searchWrap}>
-            <svg
-              className={styles.searchIcon}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              aria-hidden
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M20 20l-3-3" />
-            </svg>
-            <input
-              className={styles.search}
-              type="search"
-              placeholder="곡 제목·아티스트 검색…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              disabled={disabled}
-              aria-label="곡 검색"
-            />
-          </div>
-          {!songs.isLoading && !songs.error ? (
-            <div className={styles.resultRow}>
-              <p className={styles.resultCount} aria-live="polite">
-                {total}곡
-              </p>
-              <button
-                type="button"
-                className={styles.refreshBtn}
-                disabled={disabled || listRefreshing}
-                aria-label="목록 새로고침"
-                onClick={handleRefresh}
+          <div className={styles.searchRow}>
+            <div className={styles.searchWrap}>
+              <svg
+                className={styles.searchIcon}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden
               >
-                {listRefreshing ? '…' : '↻'}
-              </button>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M20 20l-3-3" />
+              </svg>
+              <input
+                className={styles.search}
+                type="search"
+                placeholder="제목·아티스트 검색…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                disabled={disabled}
+                aria-label="곡 검색"
+              />
             </div>
-          ) : null}
+            <button
+              type="button"
+              className={[
+                styles.refreshBtn,
+                listRefreshing ? styles.refreshBtnActive : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              disabled={disabled || listRefreshing || songs.isLoading}
+              aria-label="목록 새로고침"
+              onClick={handleRefresh}
+            >
+              <svg
+                className={[
+                  styles.refreshIcon,
+                  listRefreshing ? styles.refreshIconSpin : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden
+              >
+                <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                <path d="M21 3v6h-6" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -122,7 +138,11 @@ export function SongLibraryPanel({
       ) : null}
 
       {!songs.isLoading && !songs.error ? (
-        <ul className={styles.list}>
+        <>
+          <p className={styles.listMeta} aria-live="polite">
+            {listRefreshing ? '목록 갱신 중…' : `${total}곡`}
+          </p>
+          <ul className={styles.list}>
           {items.map((item: SongListItem) => (
             <li key={item.songId}>
               <button
@@ -142,7 +162,8 @@ export function SongLibraryPanel({
               </button>
             </li>
           ))}
-        </ul>
+          </ul>
+        </>
       ) : null}
 
       {!songs.isLoading && !songs.error && items.length === 0 ? (
