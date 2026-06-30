@@ -55,13 +55,13 @@ export function SongBuildResult({
             checked={buildMode === 'replace'}
             onChange={() => onBuildModeChange('replace')}
           />
-          replace — worship-2 전체 교체
+          replace — 재생목록 슬라이드 전체 교체
         </label>
       </fieldset>
 
       {buildMode === 'replace' ? (
         <StatusBanner tone="warning">
-          replace는 worship-2 프레젠테이션 전체를 교체합니다. 첫 예배 세팅 때만
+          replace는 현장 재생목록의 슬라이드를 전부 교체합니다. 첫 예배 세팅 때만
           사용하세요.
         </StatusBanner>
       ) : null}

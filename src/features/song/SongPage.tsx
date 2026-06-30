@@ -317,7 +317,7 @@ export function SongPage() {
     }
     if (buildMode === 'replace') {
       const ok = window.confirm(
-        'worship-2 프레젠테이션 전체를 교체합니다. 계속할까요?',
+        '현장 재생목록 슬라이드를 전부 교체합니다. 계속할까요?',
       );
       if (!ok) return;
     }
