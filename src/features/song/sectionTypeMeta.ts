@@ -4,6 +4,7 @@ export const SECTION_TYPE_OPTIONS: {
   value: SongSectionType;
   label: string;
 }[] = [
+  { value: 'title', label: 'Title' },
   { value: 'intro', label: 'Intro' },
   { value: 'verse', label: 'Verse' },
   { value: 'pre_chorus', label: 'Pre-chorus' },
@@ -17,6 +18,7 @@ export const SECTION_TYPE_OPTIONS: {
 
 /** 구간 카드 왼쪽 액센트 색 */
 export const SECTION_TYPE_ACCENT: Record<SongSectionType, string> = {
+  title: '#9a8b6e',
   intro: '#6b7b8c',
   verse: 'var(--color-accent)',
   pre_chorus: '#5a6f7d',

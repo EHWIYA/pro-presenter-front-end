@@ -139,6 +139,7 @@ export type BuiltinSongCategory = 'praise' | 'hymn' | 'hymnal' | 'special';
 export type SongCategory = BuiltinSongCategory;
 
 export type SongSectionType =
+  | 'title'
   | 'intro'
   | 'verse'
   | 'pre_chorus'
@@ -153,6 +154,8 @@ export interface SongSection {
   type: SongSectionType;
   label: string;
   lines: string[];
+  /** 슬라이드당 가사 줄 수 — 미지정 시 1줄=1슬라이드(PP 카탈로그 기본) */
+  lines_per_slide?: number;
 }
 
 export interface SongAnalyzeRequest {

@@ -69,6 +69,7 @@ export function SongPage() {
   const [loadingSong, setLoadingSong] = useState(false);
   const [detailReturnStep, setDetailReturnStep] =
     useState<DetailReturnStep>('input');
+  const [ppCatalogMode, setPpCatalogMode] = useState(false);
 
   useEffect(() => {
     void queryClient.invalidateQueries({ queryKey: ['songs'] });
@@ -99,18 +100,18 @@ export function SongPage() {
       setLoadError(null);
       try {
         const detail = await fetchSong(id, { venueId });
-        let nextSections = detail.sections;
+        let nextSections: SongSection[] = [];
         let hint = detail.sectionsHint ?? null;
 
-        if (nextSections.length === 0) {
-          try {
-            const lib = await fetchLibrarySongSections(venueId, id);
-            nextSections = lib.sections;
-            hint = null;
-          } catch {
-            // 상세 sectionsHint 유지
-          }
+        try {
+          const lib = await fetchLibrarySongSections(venueId, id);
+          nextSections = lib.sections;
+          hint = null;
+        } catch {
+          nextSections = detail.sections;
         }
+
+        const hasSections = nextSections.length > 0;
 
         setSongId(detail.songId);
         setSongTitle(detail.title);
@@ -123,8 +124,9 @@ export function SongPage() {
         setWarnings([]);
         setFromLibrary(true);
         setIsDraftSession(false);
+        setPpCatalogMode(hasSections);
         setDetailReturnStep(returnStep);
-        setStep('detail');
+        setStep(hasSections ? 'edit' : 'detail');
         build.reset();
       } catch (err) {
         const message =
@@ -233,8 +235,12 @@ export function SongPage() {
       setSaveMessage('곡 제목을 입력하세요.');
       return;
     }
-    if (!allSectionsValid(sections)) {
-      setSaveMessage('모든 구간에 1~2줄 가사를 넣어 주세요.');
+    if (!allSectionsValid(sections, ppCatalogMode)) {
+      setSaveMessage(
+        ppCatalogMode
+          ? '모든 구간에 최소 1줄 가사를 넣어 주세요.'
+          : '모든 구간에 1~2줄 가사를 넣어 주세요.',
+      );
       return;
     }
 
@@ -263,8 +269,10 @@ export function SongPage() {
     const title = songTitle.trim();
     const libraryCategoryOverride = inferLibraryCategory(songCategory, title);
 
-    if (isDraftSession || !songId) {
-      if (!title || !allSectionsValid(sections)) {
+    const useSectionsBuild = isDraftSession || !songId || ppCatalogMode;
+
+    if (useSectionsBuild) {
+      if (!title || !allSectionsValid(sections, ppCatalogMode)) {
         setStatusMessage('검수 화면에서 제목·구간을 확인하세요.');
         return;
       }
@@ -330,6 +338,7 @@ export function SongPage() {
     setWarnings([]);
     setFromLibrary(false);
     setIsDraftSession(false);
+    setPpCatalogMode(false);
     setSaveMessage(null);
     setStatusMessage(null);
     setActiveIndex(null);
@@ -346,23 +355,33 @@ export function SongPage() {
   const stepRef = useRef(step);
   const detailReturnStepRef = useRef(detailReturnStep);
   const isDraftSessionRef = useRef(isDraftSession);
+  const ppCatalogModeRef = useRef(ppCatalogMode);
 
   stepRef.current = step;
   detailReturnStepRef.current = detailReturnStep;
   isDraftSessionRef.current = isDraftSession;
+  ppCatalogModeRef.current = ppCatalogMode;
 
   const handleInternalBack = useCallback(() => {
     const current = stepRef.current;
 
     switch (current) {
       case 'build':
-        setStep(isDraftSessionRef.current ? 'edit' : 'detail');
+        setStep(
+          isDraftSessionRef.current || ppCatalogModeRef.current
+            ? 'edit'
+            : 'detail',
+        );
         break;
       case 'detail':
         setStep(detailReturnStepRef.current);
         break;
       case 'edit':
-        handleResetFlow();
+        if (ppCatalogModeRef.current) {
+          setStep(detailReturnStepRef.current);
+        } else {
+          handleResetFlow();
+        }
         break;
       case 'candidates':
         analyze.reset();
@@ -392,6 +411,13 @@ export function SongPage() {
     setStep(detailReturnStep);
   }
 
+  function handleCatalogEditBack() {
+    setSaveMessage(null);
+    setStatusMessage(null);
+    if (syncHistoryBack()) return;
+    setStep(detailReturnStep);
+  }
+
   function handleEditBack() {
     const ok = window.confirm(
       '검수를 취소하면 분석 결과가 사라집니다. 계속할까요?',
@@ -411,6 +437,8 @@ export function SongPage() {
   const showDraftFlow =
     step === 'analyzing' || (step === 'edit' && isDraftSession);
 
+  const showCatalogEdit = step === 'edit' && ppCatalogMode && !isDraftSession;
+
   const draftFlowStep: DraftFlowStep =
     step === 'analyzing' ? 'analyzing' : 'edit';
 
@@ -418,7 +446,9 @@ export function SongPage() {
 
   const canShowBuild =
     step === 'build' &&
-    (Boolean(songId) || (isDraftSession && sections.length > 0));
+    (Boolean(songId) ||
+      (isDraftSession && sections.length > 0) ||
+      (ppCatalogMode && sections.length > 0));
 
   const subtitle = isLibraryHome
     ? '제목·아티스트로 검색하거나 장르를 골라 곡을 찾으세요.'
@@ -428,7 +458,9 @@ export function SongPage() {
         ? '라이브러리 후보 중 곡을 선택하세요.'
         : step === 'detail'
           ? '카탈로그 곡입니다. PP 빌드·송출을 진행하세요.'
-          : step === 'edit'
+          : showCatalogEdit
+            ? '현장 .pro 구간을 확인·수정한 뒤 PP 빌드를 진행하세요.'
+            : step === 'edit'
             ? '제목·장르·구간을 검수한 뒤 PP 빌드를 진행하세요.'
             : step === 'build'
               ? `${songTitle || '곡'} — PP 빌드 후 슬라이드를 탭해 송출하세요.`
@@ -485,7 +517,7 @@ export function SongPage() {
         </StatusBanner>
       ) : null}
 
-      {fromLibrary && step === 'detail' && analyze.libraryHit ? (
+      {fromLibrary && showCatalogEdit && analyze.libraryHit ? (
         <StatusBanner tone="success">
           저장된 가사를 불러왔습니다 (AI 분석 생략).
         </StatusBanner>
@@ -548,19 +580,19 @@ export function SongPage() {
         />
       ) : null}
 
-      {!loadingSong && step === 'edit' && isDraftSession ? (
+      {!loadingSong && step === 'edit' && (isDraftSession || ppCatalogMode) ? (
         <>
           <SongReviewHeader
             songTitle={songTitle}
             category={songCategory}
             sectionCount={sections.length}
-            validSectionCount={countValidSections(sections)}
+            validSectionCount={countValidSections(sections, ppCatalogMode)}
             isDraft={isDraftSession}
             disabled={actionsDisabled}
             onTitleChange={setSongTitle}
             onCategoryChange={setSongCategory}
             onReanalyze={
-              lastUploadPayload && songTitle.trim()
+              isDraftSession && lastUploadPayload && songTitle.trim()
                 ? () => setReanalyzeConfirmOpen(true)
                 : undefined
             }
@@ -575,8 +607,15 @@ export function SongPage() {
             onChange={setSections}
             onSave={handleProceedToBuild}
             savePrimary
-            onBack={handleEditBack}
-            backLabel="분석 취소"
+            onBack={ppCatalogMode ? handleCatalogEditBack : handleEditBack}
+            backLabel={
+              ppCatalogMode
+                ? detailReturnStep === 'candidates'
+                  ? '후보 목록으로'
+                  : '목록으로'
+                : '분석 취소'
+            }
+            ppCatalogMode={ppCatalogMode}
           />
         </>
       ) : null}
@@ -597,7 +636,9 @@ export function SongPage() {
           onTrigger={handleTrigger}
           onBack={() => {
             setStatusMessage(null);
-            setStep(isDraftSession ? 'edit' : 'detail');
+            setStep(
+              isDraftSession || ppCatalogMode ? 'edit' : 'detail',
+            );
           }}
         />
       ) : null}

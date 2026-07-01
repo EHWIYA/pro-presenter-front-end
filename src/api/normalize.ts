@@ -30,12 +30,14 @@ export function normalizeSections(raw: unknown): SongSection[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((item) => {
     const s = item as Record<string, unknown>;
+    const linesPerSlide = asNumber(s.linesPerSlide ?? s.lines_per_slide);
     return {
       type: (s.type as SongSection['type']) ?? 'unknown',
       label: asString(s.label) ?? '',
       lines: Array.isArray(s.lines)
         ? s.lines.map((l) => String(l))
         : [],
+      ...(linesPerSlide !== undefined ? { lines_per_slide: linesPerSlide } : {}),
     };
   });
 }

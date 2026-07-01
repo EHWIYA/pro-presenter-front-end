@@ -218,6 +218,10 @@
   font-size: 0.9375rem;
 }
 
+.textareaCatalog {
+  min-height: 6rem;
+}
+
 .textareaInvalid {
   border-color: var(--color-danger);
 }

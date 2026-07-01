@@ -187,13 +187,18 @@ const MOCK_LIBRARY_SONGS: SongDetail[] = [
     presentationFilename: '주님의 마음.pro',
     sections: [
       {
+        type: 'title',
+        label: 'T',
+        lines: ['주님의 마음'],
+      },
+      {
         type: 'verse',
-        label: '1절',
-        lines: ['주님의 마음 주님의 음성', '나를 부르시네'],
+        label: 'V1',
+        lines: ['주님의 마음 주님의 음성', '나를 부르시네', '내 영혼이 깨어나'],
       },
       {
         type: 'chorus',
-        label: '후렴',
+        label: 'C',
         lines: ['할렐루야', '주님께 영광'],
       },
     ],
@@ -466,11 +471,36 @@ export async function mockBuildSong(
     }
   }
 
-  const slide_map = sections.map((section, i) => ({
-    index: baseIndex + i,
-    label: section.label,
-    preview: section.lines.join(' / ').slice(0, 48),
-  }));
+  const slideEntries: { index: number; label: string; preview: string }[] = [];
+  const groups: SongBuildResponse['groups'] = [];
+  let slideIndex = baseIndex;
+
+  for (const section of sections) {
+    const lines = section.lines.map((l) => l.trim()).filter(Boolean);
+    const perSlide = Math.max(1, section.lines_per_slide ?? 1);
+    const slideCount = Math.max(1, Math.ceil(lines.length / perSlide));
+    const firstIndex = slideIndex;
+
+    for (let s = 0; s < slideCount; s += 1) {
+      const chunk = lines.slice(s * perSlide, s * perSlide + perSlide);
+      slideEntries.push({
+        index: slideIndex,
+        label: section.label,
+        preview: chunk.join(' / ').slice(0, 48),
+      });
+      slideIndex += 1;
+    }
+
+    groups.push({
+      name: section.label,
+      uuid: `mock-uuid-${groups.length}`,
+      slide_count: slideCount,
+      first_index: firstIndex,
+      color_hex: '#26a559',
+    });
+  }
+
+  const slide_map = slideEntries;
 
   const libraryCategory =
     body.libraryCategory ?? inferLibraryCategory(songCategory, songTitle);
@@ -481,15 +511,9 @@ export async function mockBuildSong(
     sourceSongId,
     build_mode: body.buildMode,
     slide_map,
-    groups: sections.map((section, i) => ({
-      name: section.label,
-      uuid: `mock-uuid-${i}`,
-      slide_count: 1,
-      first_index: baseIndex + i,
-      color_hex: '#26a559',
-    })),
+    groups,
     section_results: [],
-    total_slide_count: baseIndex + sections.length,
+    total_slide_count: slideIndex,
     message: libraryCategory
       ? `mock build-song ok → Libraries/${libraryCategory}/${songTitle}.pro`
       : 'mock build-song ok',

@@ -5,6 +5,7 @@ import { songCategoryLabel } from './songCategoryMeta';
 import styles from './SongDetailView.module.css';
 
 const SECTION_TYPE_LABELS: Record<SongSectionType, string> = {
+  title: 'Title',
   intro: 'Intro',
   verse: 'Verse',
   pre_chorus: 'Pre-chorus',

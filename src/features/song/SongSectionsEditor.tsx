@@ -8,16 +8,28 @@ import {
 } from './sectionTypeMeta';
 import styles from './SongSectionsEditor.module.css';
 
-export function sectionLinesValid(lines: string[]): boolean {
+export function sectionLinesValid(
+  lines: string[],
+  ppCatalogMode = false,
+): boolean {
   const nonEmpty = lines.map((l) => l.trim()).filter(Boolean);
+  if (ppCatalogMode) {
+    return nonEmpty.length >= 1;
+  }
   return nonEmpty.length >= 1 && nonEmpty.length <= 2;
 }
 
-export function allSectionsValid(sections: SongSection[]): boolean {
-  return sections.length > 0 && sections.every((s) => sectionLinesValid(s.lines));
+export function allSectionsValid(
+  sections: SongSection[],
+  ppCatalogMode = false,
+): boolean {
+  return (
+    sections.length > 0 &&
+    sections.every((s) => sectionLinesValid(s.lines, ppCatalogMode))
+  );
 }
 
-function parseLinesText(text: string): string[] {
+function parseDraftLinesText(text: string): string[] {
   return text
     .split('\n')
     .map((l) => l.trim())
@@ -25,8 +37,18 @@ function parseLinesText(text: string): string[] {
     .slice(0, 2);
 }
 
-export function countValidSections(sections: SongSection[]): number {
-  return sections.filter((s) => sectionLinesValid(s.lines)).length;
+function parseCatalogLinesText(text: string): string[] {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+}
+
+export function countValidSections(
+  sections: SongSection[],
+  ppCatalogMode = false,
+): number {
+  return sections.filter((s) => sectionLinesValid(s.lines, ppCatalogMode)).length;
 }
 
 interface SongSectionsEditorProps {
@@ -43,6 +65,8 @@ interface SongSectionsEditorProps {
   backLabel?: string;
   /** 라이브러리 저장이 주 액션일 때 true (검수·빌드 분리) */
   savePrimary?: boolean;
+  /** PP .pro 카탈로그 편집 — 줄 1개=슬라이드 1장, PP 라벨(V1·C…) 유지 */
+  ppCatalogMode?: boolean;
 }
 
 export function SongSectionsEditor({
@@ -58,9 +82,10 @@ export function SongSectionsEditor({
   saveLabel = '라이브러리에 저장',
   backLabel = '입력으로',
   savePrimary = true,
+  ppCatalogMode = false,
 }: SongSectionsEditorProps) {
-  const hasInvalid = !allSectionsValid(sections);
-  const validCount = countValidSections(sections);
+  const hasInvalid = !allSectionsValid(sections, ppCatalogMode);
+  const validCount = countValidSections(sections, ppCatalogMode);
 
   function updateSection(index: number, patch: Partial<SongSection>) {
     onChange(sections.map((s, i) => (i === index ? { ...s, ...patch } : s)));
@@ -73,16 +98,24 @@ export function SongSectionsEditor({
   function addSection() {
     onChange([
       ...sections,
-      { type: 'verse', label: `${sections.length + 1}절`, lines: [''] },
+      {
+        type: 'verse',
+        label: ppCatalogMode ? `V${sections.length + 1}` : `${sections.length + 1}절`,
+        lines: [''],
+      },
     ]);
   }
+
+  const parseLinesText = ppCatalogMode ? parseCatalogLinesText : parseDraftLinesText;
 
   return (
     <div className={styles.root}>
       <div className={styles.sectionHead}>
         <h3 className={styles.sectionTitle}>가사 구간</h3>
         <p className={styles.sectionSub}>
-          슬라이드당 1~2줄 · {sections.length}개 구간
+          {ppCatalogMode
+            ? `줄 1개 = 슬라이드 1장 · ${sections.length}개 구간`
+            : `슬라이드당 1~2줄 · ${sections.length}개 구간`}
         </p>
       </div>
 
@@ -96,9 +129,19 @@ export function SongSectionsEditor({
 
       <ol className={styles.timeline}>
         {sections.map((section, index) => {
-          const lineCount = section.lines.filter((l) => l.trim()).length;
-          const invalid = lineCount < 1 || lineCount > 2;
+          const nonEmptyLines = section.lines
+            .map((l) => l.trim())
+            .filter(Boolean);
+          const lineCount = nonEmptyLines.length;
+          const invalid = ppCatalogMode
+            ? lineCount < 1
+            : lineCount < 1 || lineCount > 2;
           const accent = SECTION_TYPE_ACCENT[section.type];
+          const slideCount = ppCatalogMode
+            ? Math.ceil(
+                lineCount / Math.max(1, section.lines_per_slide ?? 1),
+              )
+            : null;
 
           return (
             <li
@@ -152,12 +195,14 @@ export function SongSectionsEditor({
                 </div>
 
                 <label className={styles.labelField}>
-                  <span className={styles.fieldLabel}>표시 이름</span>
+                  <span className={styles.fieldLabel}>
+                    {ppCatalogMode ? 'PP 라벨' : '표시 이름'}
+                  </span>
                   <input
                     className={styles.input}
                     value={section.label}
                     disabled={disabled}
-                    placeholder="1절, 후렴…"
+                    placeholder={ppCatalogMode ? 'V1, C, B…' : '1절, 후렴…'}
                     onChange={(e) =>
                       updateSection(index, { label: e.target.value })
                     }
@@ -165,46 +210,61 @@ export function SongSectionsEditor({
                 </label>
 
                 <div className={styles.lyricsHead}>
-                  <span className={styles.fieldLabel}>가사 (1~2줄)</span>
-                  <div
-                    className={styles.lineMeter}
-                    aria-label={`${lineCount}줄 입력됨`}
-                  >
-                    <span
-                      className={[
-                        styles.lineDot,
-                        lineCount >= 1 ? styles.lineDotOn : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    />
-                    <span
-                      className={[
-                        styles.lineDot,
-                        lineCount >= 2 ? styles.lineDotOn : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    />
-                  </div>
+                  <span className={styles.fieldLabel}>
+                    {ppCatalogMode
+                      ? `가사 (${lineCount}줄 · 슬라이드 ${slideCount ?? 0}장)`
+                      : '가사 (1~2줄)'}
+                  </span>
+                  {!ppCatalogMode ? (
+                    <div
+                      className={styles.lineMeter}
+                      aria-label={`${lineCount}줄 입력됨`}
+                    >
+                      <span
+                        className={[
+                          styles.lineDot,
+                          lineCount >= 1 ? styles.lineDotOn : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      />
+                      <span
+                        className={[
+                          styles.lineDot,
+                          lineCount >= 2 ? styles.lineDotOn : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 <textarea
                   className={[
                     styles.textarea,
                     invalid ? styles.textareaInvalid : '',
+                    ppCatalogMode ? styles.textareaCatalog : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
                   value={section.lines.join('\n')}
                   disabled={disabled}
-                  placeholder={'첫 번째 줄\n두 번째 줄 (선택)'}
+                  placeholder={
+                    ppCatalogMode
+                      ? '한 줄에 슬라이드 한 장'
+                      : '첫 번째 줄\n두 번째 줄 (선택)'
+                  }
                   onChange={(e) =>
                     updateSection(index, { lines: parseLinesText(e.target.value) })
                   }
-                  rows={2}
+                  rows={ppCatalogMode ? Math.max(3, lineCount + 1) : 2}
                 />
                 {invalid ? (
-                  <p className={styles.fieldError}>1~2줄의 가사가 필요합니다.</p>
+                  <p className={styles.fieldError}>
+                    {ppCatalogMode
+                      ? '최소 1줄의 가사가 필요합니다.'
+                      : '1~2줄의 가사가 필요합니다.'}
+                  </p>
                 ) : null}
               </article>
             </li>
@@ -223,8 +283,10 @@ export function SongSectionsEditor({
 
       {hasInvalid ? (
         <StatusBanner tone="error">
-          {validCount}/{sections.length}구간만 준비됐습니다. 모든 구간에 1~2줄
-          가사를 넣어 주세요.
+          {validCount}/{sections.length}구간만 준비됐습니다.{' '}
+          {ppCatalogMode
+            ? '모든 구간에 최소 1줄 가사를 넣어 주세요.'
+            : '모든 구간에 1~2줄 가사를 넣어 주세요.'}
         </StatusBanner>
       ) : null}
 
