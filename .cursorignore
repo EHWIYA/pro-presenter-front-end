@@ -1,0 +1,53 @@
+﻿# Cursor 인덱싱·에이전트 컨텍스트 제외 (.gitignore와 별도)
+# Git 제외 ≠ Cursor 제외 — 이 파일로 로컬 캐시·인덱싱 부담을 줄입니다.
+
+# --- deps ---
+node_modules/
+
+# --- build / Vite ---
+dist/
+dist-ssr/
+.vite/
+build/
+*.tsbuildinfo
+
+# --- lock (대용량 JSON, 코딩 컨텍스트에 거의 불필요) ---
+package-lock.json
+
+# --- env (secrets·로컬만) ---
+.env
+.env.*
+*.local
+
+# --- test / coverage ---
+coverage/
+
+# --- logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- binary / media (PWA 아이콘 등) ---
+public/icons/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.mp3
+*.mp4
+*.wav
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- editor (선택 로컬) ---
+.idea/
+*.swp
+*.swo
+*~
