@@ -1,20 +1,35 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { buildWorship } from '@/api';
-import type { WorshipBuildResponse } from '@/api';
+import type { WorshipBuildRequest, WorshipBuildResponse } from '@/api';
 import { queryKeys } from '@/lib/queryKeys';
+
+export interface WorshipBuildParams {
+  reference: string;
+  presentationFilename: string;
+}
 
 export function useBuildWorship(venueId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (text: string) => {
+    mutationFn: (params: WorshipBuildParams) => {
       if (!venueId) throw new Error('현장을 먼저 선택하세요');
-      return buildWorship(venueId, { text });
+
+      const body: WorshipBuildRequest = {
+        reference: params.reference,
+        presentation_filename: params.presentationFilename,
+        auto_trigger: false,
+      };
+      return buildWorship(venueId, body);
     },
-    onSuccess: (data: WorshipBuildResponse, text: string) => {
+    onSuccess: (data: WorshipBuildResponse, params: WorshipBuildParams) => {
       if (venueId) {
         queryClient.setQueryData(
-          queryKeys.worshipBuild(venueId, text),
+          queryKeys.worshipBuild(
+            venueId,
+            params.reference,
+            params.presentationFilename,
+          ),
           data,
         );
       }

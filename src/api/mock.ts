@@ -5,6 +5,7 @@ import type {
   SongBuildRequest,
   SongBuildResponse,
   SongCategoriesResponse,
+  SongCategory,
   SongCategoryRecord,
   SongDetail,
   SongJobResponse,
@@ -20,6 +21,7 @@ import type {
   WorshipTriggerResponse,
 } from './types';
 import { slugifyCategoryLabel } from '@/lib/songCategoryStore';
+import { inferLibraryCategory } from '@/lib/libraryCategory';
 
 const MOCK_VENUES: Venue[] = [
   { id: 'hwiya-pc', name: '개발·테스트 PC', description: 'E2E 검증' },
@@ -176,28 +178,22 @@ export async function mockBuildWorship(
   body: WorshipBuildRequest,
 ): Promise<WorshipBuildResponse> {
   await delay(500);
-  const lines = body.text
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
+  const reference = body.reference.trim() || '데모 참조';
+  const presentation_filename =
+    body.presentation_filename?.trim() || `${reference.replace(/\s+/g, '-')}.pro`;
+  const library_category = body.library_category?.trim() || '말씀';
 
-  const slide_map =
-    lines.length > 0
-      ? lines.map((line, index) => ({
-          index,
-          label: `슬라이드 ${index + 1}`,
-          preview: line.slice(0, 48),
-        }))
-      : [
-          { index: 0, label: '제목', preview: '빈 입력 — 데모 슬라이드' },
-          { index: 1, label: '본문 1', preview: '데모 본문' },
-          { index: 2, label: '본문 2', preview: '데모 본문 2' },
-        ];
+  const slide_map = [
+    { index: 0, label: '제목', preview: reference },
+    { index: 1, label: '본문 1', preview: `${reference} — 데모 본문 1` },
+    { index: 2, label: '본문 2', preview: `${reference} — 데모 본문 2` },
+  ];
 
-  const reference = lines[0] ?? '데모 참조';
   return {
     ok: true,
     reference,
+    presentation_filename,
+    library_category,
     slide_count: slide_map.length,
     slide_map,
     message: 'mock build ok',
@@ -494,6 +490,7 @@ export async function mockBuildSong(
   let sections: SongSection[] = body.sections ?? [];
   let songTitle = body.songTitle ?? '';
   let sourceSongId = body.songId;
+  let songCategory: SongCategory = 'praise';
 
   if (body.songId && !body.sections) {
     const song = MOCK_LIBRARY_SONGS.find((s) => s.songId === body.songId);
@@ -501,6 +498,7 @@ export async function mockBuildSong(
       sections = song.sections;
       songTitle = song.title;
       sourceSongId = song.songId;
+      songCategory = song.category;
     }
   }
 
@@ -509,6 +507,9 @@ export async function mockBuildSong(
     label: section.label,
     preview: section.lines.join(' / ').slice(0, 48),
   }));
+
+  const libraryCategory =
+    body.libraryCategory ?? inferLibraryCategory(songCategory, songTitle);
 
   return {
     ok: true,
@@ -525,7 +526,9 @@ export async function mockBuildSong(
     })),
     section_results: [],
     total_slide_count: baseIndex + sections.length,
-    message: 'mock build-song ok',
+    message: libraryCategory
+      ? `mock build-song ok → Libraries/${libraryCategory}/${songTitle}.pro`
+      : 'mock build-song ok',
   };
 }
 

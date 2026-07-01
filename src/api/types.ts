@@ -53,13 +53,23 @@ export interface SlideMapEntry {
   preview?: string;
 }
 
+export type WorshipBuildMode = 'append' | 'replace';
+export type WorshipGroupThemeKey = 'reader-context' | 'sermon';
+
 export interface WorshipBuildRequest {
-  text: string;
+  reference: string;
+  presentation_filename?: string;
+  library_category?: string;
+  group_theme_key?: WorshipGroupThemeKey;
+  build_mode?: WorshipBuildMode;
+  auto_trigger?: boolean;
 }
 
 export interface WorshipBuildResponse {
   ok: boolean;
   reference?: string;
+  presentation_filename?: string;
+  library_category?: string;
   slide_count?: number;
   slide_map: SlideMapEntry[];
   message?: string;
@@ -216,6 +226,8 @@ export interface SongBuildRequest {
   songId?: string;
   songTitle?: string;
   sections?: SongSection[];
+  libraryCategory?: string;
+  groupThemeKey?: string;
 }
 
 export interface SongBuildGroup {
