@@ -61,10 +61,14 @@ export function SongBuildResult({
 
       {buildMode === 'replace' ? (
         <StatusBanner tone="warning">
-          replace는 현장 재생목록의 슬라이드를 전부 교체합니다. 첫 예배 세팅 때만
-          사용하세요.
+          replace는 Libraries/찬양·찬송가·성가곡/*.pro 슬라이드를 새로 만듭니다.
+          같은 곡을 다시 빌드할 때만 append를 사용하세요.
         </StatusBanner>
-      ) : null}
+      ) : (
+        <StatusBanner tone="info">
+          append는 기존 .pro 슬라이드 뒤에 구간을 추가합니다.
+        </StatusBanner>
+      )}
 
       <Button fullWidth disabled={buildPending} onClick={onBuild}>
         {buildPending ? 'PP 빌드 중…' : 'ProPresenter 빌드'}

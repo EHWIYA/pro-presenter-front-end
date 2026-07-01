@@ -23,6 +23,7 @@ import {
 } from '@/hooks';
 import { TAB_PATHS } from '@/lib/tabRoutes';
 import { queryKeys } from '@/lib/queryKeys';
+import { inferLibraryCategory } from '@/lib/libraryCategory';
 import { SongBuildResult } from './SongBuildResult';
 import { SongCandidatesList } from './SongCandidatesList';
 import { SongDetailView } from './SongDetailView';
@@ -59,7 +60,7 @@ export function SongPage() {
   const [sections, setSections] = useState<SongSection[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [fromLibrary, setFromLibrary] = useState(false);
-  const [buildMode, setBuildMode] = useState<SongBuildMode>('append');
+  const [buildMode, setBuildMode] = useState<SongBuildMode>('replace');
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -317,12 +318,18 @@ export function SongPage() {
     }
     if (buildMode === 'replace') {
       const ok = window.confirm(
-        '현장 재생목록 슬라이드를 전부 교체합니다. 계속할까요?',
+        'Libraries 폴더의 .pro 슬라이드를 새로 만듭니다. 계속할까요?',
       );
       if (!ok) return;
     }
 
-    build.mutate({ venueId, songId, buildMode });
+    const libraryCategory = inferLibraryCategory(songCategory, songTitle);
+    build.mutate({
+      venueId,
+      songId,
+      buildMode,
+      ...(libraryCategory ? { libraryCategory } : {}),
+    });
   }
 
   function handleTrigger(index: number) {

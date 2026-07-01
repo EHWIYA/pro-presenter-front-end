@@ -9,7 +9,13 @@ import {
   useVenueStatuses,
   useWorshipBuildCache,
 } from '@/hooks';
-import { getVerseText, setVerseText } from '@/lib/session';
+import { extractBibleReference } from '@/lib/bibleReference';
+import {
+  getPresentationFilename,
+  getVerseText,
+  setPresentationFilename,
+  setVerseText,
+} from '@/lib/session';
 import { TAB_PATHS, navigateToTab } from '@/lib/tabRoutes';
 import styles from './WorshipBuildPage.module.css';
 
@@ -17,12 +23,26 @@ export function WorshipBuildPage() {
   const navigate = useNavigate();
   const venueId = useRequireVenue();
   const [text, setText] = useState(getVerseText);
+  const [presentationFilename, setPresentationFilenameState] = useState(
+    getPresentationFilename,
+  );
+  const reference = extractBibleReference(text);
   const statuses = useVenueStatuses();
   const probe = useVenueProbe(venueId, Boolean(venueId));
   const build = useBuildWorship(venueId);
-  const cached = useWorshipBuildCache(venueId, text);
+  const cached = useWorshipBuildCache(
+    venueId,
+    reference,
+    presentationFilename.trim(),
+  );
 
   const slideMap = build.data?.slide_map ?? cached?.slide_map;
+  const resolvedFilename =
+    build.data?.presentation_filename ??
+    cached?.presentation_filename ??
+    presentationFilename.trim();
+  const resolvedCategory =
+    build.data?.library_category ?? cached?.library_category;
   const venueStatus = venueId
     ? statuses.data?.find((status) => status.venue_id === venueId)
     : undefined;
@@ -34,6 +54,7 @@ export function WorshipBuildPage() {
 
   const handleBuildReselect = useCallback(() => {
     setText(getVerseText());
+    setPresentationFilenameState(getPresentationFilename());
     build.reset();
   }, [build]);
 
@@ -41,9 +62,12 @@ export function WorshipBuildPage() {
 
   function handleBuild() {
     if (!venueId || build.isPending || !canBuild) return;
-    if (!text.trim()) return;
+    const ref = extractBibleReference(text);
+    const filename = presentationFilename.trim();
+    if (!ref || !filename) return;
     setVerseText(text);
-    build.mutate(text);
+    setPresentationFilename(filename);
+    build.mutate({ reference: ref, presentationFilename: filename });
   }
 
   if (!venueId) return null;
@@ -51,19 +75,41 @@ export function WorshipBuildPage() {
   return (
     <Card
       title="구절 입력"
-      subtitle="첫 비어 있지 않은 줄을 성경 참조로 빌드합니다. 송출 시 slide_map의 index를 사용하세요."
+      subtitle="성경 참조(예: 마 3:1-10)로 Libraries/말씀/*.pro 를 빌드합니다. 송출 시 slide_map의 index를 사용하세요."
     >
-      <label className="sr-only" htmlFor="verse-text">
-        성경 구절 텍스트
+      <label className={styles.fieldLabel} htmlFor="verse-text">
+        성경 참조
       </label>
       <textarea
         id="verse-text"
         className={styles.textarea}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="요한복음 3:16&#10;하나님이 세상을 이처럼 사랑하사…"
+        placeholder="마 3:1-10"
         disabled={build.isPending}
       />
+      <p className={styles.hint}>
+        여러 줄 입력 시 첫 비어 있지 않은 줄만 참조로 사용합니다.
+      </p>
+
+      <label className={styles.fieldLabel} htmlFor="presentation-filename">
+        .pro 파일명
+      </label>
+      <input
+        id="presentation-filename"
+        type="text"
+        className={styles.filenameInput}
+        value={presentationFilename}
+        onChange={(e) => setPresentationFilenameState(e.target.value)}
+        placeholder="260701-말씀.pro"
+        disabled={build.isPending}
+        spellCheck={false}
+      />
+      <p className={styles.hint}>
+        기본값은 KST 오늘 날짜(예: 260701-말씀.pro)입니다. 같은 날 재빌드 시
+        파일명을 고정하세요.
+      </p>
+
       <p className={styles.hint}>
         빌드는 ProPresenter 연결 + 현장 에이전트(8787) 정상일 때만 가능합니다.
       </p>
@@ -84,7 +130,16 @@ export function WorshipBuildPage() {
         </StatusBanner>
       ) : null}
 
-      <Button fullWidth disabled={build.isPending || !text.trim() || !canBuild} onClick={handleBuild}>
+      <Button
+        fullWidth
+        disabled={
+          build.isPending ||
+          !reference ||
+          !presentationFilename.trim() ||
+          !canBuild
+        }
+        onClick={handleBuild}
+      >
         {build.isPending ? '빌드 중…' : '빌드'}
       </Button>
 
@@ -100,8 +155,11 @@ export function WorshipBuildPage() {
             {(build.data?.reference ?? cached?.reference)
               ? `${build.data?.reference ?? cached?.reference} · `
               : ''}
-            {build.data?.slide_count ?? cached?.slide_count ?? slideMap.length}개 슬라이드
-            준비됨 — 송출 탭에서 trigger 하세요.
+            {resolvedFilename ? `${resolvedFilename}` : ''}
+            {resolvedCategory ? ` · ${resolvedCategory}` : ''}
+            {' · '}
+            {build.data?.slide_count ?? cached?.slide_count ?? slideMap.length}
+            개 슬라이드 준비됨 — 송출 탭에서 trigger 하세요.
           </StatusBanner>
           <SlideGrid
             slides={slideMap}

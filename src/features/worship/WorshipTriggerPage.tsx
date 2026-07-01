@@ -10,13 +10,16 @@ import {
   useVenueStatuses,
   useWorshipBuildCache,
 } from '@/hooks';
-import { getVerseText } from '@/lib/session';
+import { extractBibleReference } from '@/lib/bibleReference';
+import { getPresentationFilename, getVerseText } from '@/lib/session';
 import { TAB_PATHS, navigateToTab } from '@/lib/tabRoutes';
 
 export function WorshipTriggerPage() {
   const navigate = useNavigate();
   const venueId = useRequireVenue();
   const verseText = getVerseText();
+  const reference = extractBibleReference(verseText);
+  const presentationFilename = getPresentationFilename();
   const statuses = useVenueStatuses();
   const probe = useVenueProbe(venueId, Boolean(venueId));
   const build = useBuildWorship(venueId);
@@ -27,7 +30,7 @@ export function WorshipTriggerPage() {
   );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const cached = useWorshipBuildCache(venueId, verseText);
+  const cached = useWorshipBuildCache(venueId, reference, presentationFilename);
   const slideMap = build.data?.slide_map ?? cached?.slide_map;
   const venueStatus = venueId
     ? statuses.data?.find((status) => status.venue_id === venueId)
@@ -71,13 +74,15 @@ export function WorshipTriggerPage() {
       <Card title="송출" subtitle="빌드된 slide_map이 없습니다.">
         <StatusBanner tone="warning">
           먼저 빌드 탭에서 구절을 빌드하세요.
-          {verseText ? ' (저장된 구절 텍스트 있음)' : ''}
+          {reference ? ` (저장된 참조: ${reference})` : ''}
         </StatusBanner>
         <Button
           fullWidth
-          disabled={!verseText || build.isPending || !canOperate}
+          disabled={!reference || build.isPending || !canOperate}
           onClick={() => {
-            if (verseText) build.mutate(verseText);
+            if (reference) {
+              build.mutate({ reference, presentationFilename });
+            }
           }}
         >
           {build.isPending ? '빌드 중…' : '저장된 구절로 빌드'}
