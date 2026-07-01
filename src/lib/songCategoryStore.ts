@@ -5,15 +5,8 @@ export interface SongCategoryDef {
   label: string;
   shortLabel: string;
   description: string;
-  builtin: boolean;
+  builtin: true;
   accent: string;
-}
-
-export interface CustomCategoryRecord {
-  id: `custom:${string}`;
-  label: string;
-  createdAt: string;
-  updatedAt?: string;
 }
 
 export const BUILTIN_CATEGORY_DEFS: SongCategoryDef[] = [
@@ -24,6 +17,14 @@ export const BUILTIN_CATEGORY_DEFS: SongCategoryDef[] = [
     description: '현대 찬양·워십',
     builtin: true,
     accent: '#5a9fd4',
+  },
+  {
+    id: 'hymnal',
+    label: '찬송가',
+    shortLabel: '찬송가',
+    description: '찬송가 번호·전통 찬송',
+    builtin: true,
+    accent: '#7d8f6b',
   },
   {
     id: 'hymn',
@@ -45,64 +46,23 @@ export const BUILTIN_CATEGORY_DEFS: SongCategoryDef[] = [
 
 export const BUILTIN_CATEGORY_IDS: BuiltinSongCategory[] = [
   'praise',
+  'hymnal',
   'hymn',
   'special',
 ];
 
-const CUSTOM_ACCENT = '#6b7b8c';
-
-let cachedCustomCategories: CustomCategoryRecord[] = [];
-
-export function setCachedCustomCategories(rows: CustomCategoryRecord[]): void {
-  cachedCustomCategories = rows;
-}
-
-export function getCachedCustomCategories(): CustomCategoryRecord[] {
-  return cachedCustomCategories;
-}
-
-export function slugifyCategoryLabel(label: string): string {
-  const trimmed = label.trim();
-  if (!trimmed) return '';
-  const ascii = trimmed
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9가-힣-]/g, '')
-    .slice(0, 32);
-  if (ascii) return ascii;
-  return `cat-${Date.now().toString(36)}`;
-}
-
-function customToDef(row: CustomCategoryRecord): SongCategoryDef {
-  return {
-    id: row.id,
-    label: row.label,
-    shortLabel:
-      row.label.length > 6 ? `${row.label.slice(0, 5)}…` : row.label,
-    description: '사용자 추가 카테고리',
-    builtin: false,
-    accent: CUSTOM_ACCENT,
-  };
-}
-
-export function buildCategoryDefs(
-  custom: CustomCategoryRecord[],
-): SongCategoryDef[] {
-  return [...BUILTIN_CATEGORY_DEFS, ...custom.map(customToDef)];
-}
-
 export function getAllCategoryDefs(): SongCategoryDef[] {
-  return buildCategoryDefs(cachedCustomCategories);
+  return BUILTIN_CATEGORY_DEFS;
 }
 
 export function findCategoryDef(
   categoryId: SongCategory,
 ): SongCategoryDef | undefined {
-  return getAllCategoryDefs().find((d) => d.id === categoryId);
+  return BUILTIN_CATEGORY_DEFS.find((d) => d.id === categoryId);
 }
 
 export function getKnownCategoryIds(): Set<string> {
-  return new Set(getAllCategoryDefs().map((d) => d.id));
+  return new Set(BUILTIN_CATEGORY_IDS);
 }
 
 export function validateCategoryLabel(label: string):

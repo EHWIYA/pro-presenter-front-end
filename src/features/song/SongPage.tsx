@@ -7,14 +7,11 @@ import type {
   SongCategory,
   SongSection,
 } from '@/api';
-import { fetchSong } from '@/api';
+import { fetchLibrarySongSections, fetchSong } from '@/api';
 import {
   useBuildSong,
-  useCreateSong,
-  useDeleteSong,
   useSongAnalyze,
   useTriggerSlide,
-  useUpdateSongSections,
   useInternalStepBack,
   useRequireVenue,
   useTabReselect,
@@ -22,8 +19,8 @@ import {
   useVenueStatuses,
 } from '@/hooks';
 import { TAB_PATHS } from '@/lib/tabRoutes';
-import { queryKeys } from '@/lib/queryKeys';
 import { inferLibraryCategory } from '@/lib/libraryCategory';
+import { allSectionsValid } from '@/features/song/SongSectionsEditor';
 import { SongBuildResult } from './SongBuildResult';
 import { SongCandidatesList } from './SongCandidatesList';
 import { SongDetailView } from './SongDetailView';
@@ -46,9 +43,6 @@ export function SongPage() {
   const analyze = useSongAnalyze();
   const build = useBuildSong();
   const trigger = useTriggerSlide(venueId);
-  const saveSections = useUpdateSongSections();
-  const createSongMutation = useCreateSong();
-  const deleteSongMutation = useDeleteSong();
 
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [isDraftSession, setIsDraftSession] = useState(false);
@@ -57,7 +51,10 @@ export function SongPage() {
   const [songTitle, setSongTitle] = useState('');
   const [songCategory, setSongCategory] = useState<SongCategory>('praise');
   const [songArtist, setSongArtist] = useState<string | null>(null);
+  const [libraryCategory, setLibraryCategory] = useState('');
+  const [presentationFilename, setPresentationFilename] = useState('');
   const [sections, setSections] = useState<SongSection[]>([]);
+  const [sectionsHint, setSectionsHint] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [fromLibrary, setFromLibrary] = useState(false);
   const [buildMode, setBuildMode] = useState<SongBuildMode>('replace');
@@ -73,7 +70,6 @@ export function SongPage() {
     useState<DetailReturnStep>('input');
 
   useEffect(() => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.songCategories });
     void queryClient.invalidateQueries({ queryKey: ['songs'] });
   }, [queryClient]);
 
@@ -87,29 +83,41 @@ export function SongPage() {
   const operationalReady = connected && agentReady;
   const isAnalyzing = analyze.start.isPending || analyze.isPolling;
 
-  const savePending = saveSections.isPending || createSongMutation.isPending;
-  const deletePending = deleteSongMutation.isPending;
-
   const actionsDisabled =
     !operationalReady ||
     build.isPending ||
     isAnalyzing ||
-    loadingSong ||
-    savePending ||
-    deletePending;
+    loadingSong;
 
   const loadSongDetail = useCallback(
     async (id: string, returnStep: DetailReturnStep) => {
+      if (!venueId) return;
       setLoadingSong(true);
       setSaveMessage(null);
       setStatusMessage(null);
       try {
-        const detail = await fetchSong(id);
+        const detail = await fetchSong(id, { venueId });
+        let nextSections = detail.sections;
+        let hint = detail.sectionsHint ?? null;
+
+        if (nextSections.length === 0) {
+          try {
+            const lib = await fetchLibrarySongSections(venueId, id);
+            nextSections = lib.sections;
+            hint = null;
+          } catch {
+            // 상세 sectionsHint 유지
+          }
+        }
+
         setSongId(detail.songId);
         setSongTitle(detail.title);
         setSongCategory(detail.category);
         setSongArtist(detail.artist);
-        setSections(detail.sections);
+        setLibraryCategory(detail.libraryCategory);
+        setPresentationFilename(detail.presentationFilename);
+        setSections(nextSections);
+        setSectionsHint(hint);
         setWarnings([]);
         setFromLibrary(true);
         setIsDraftSession(false);
@@ -124,30 +132,13 @@ export function SongPage() {
         setLoadingSong(false);
       }
     },
-    [build],
+    [build, venueId],
   );
 
   useEffect(() => {
-    if (!analyze.libraryHit) return;
-    const hit = analyze.libraryHit;
-    setSongId(hit.songId);
-    setSongTitle(hit.title);
-    setSections(hit.sections);
-    setWarnings([]);
-    setFromLibrary(true);
-    setIsDraftSession(false);
-    setDetailReturnStep('input');
-    setStep('detail');
-    void fetchSong(hit.songId)
-      .then((detail) => {
-        setSongCategory(detail.category);
-        setSongArtist(detail.artist);
-      })
-      .catch(() => {
-        setSongCategory('praise');
-        setSongArtist(null);
-      });
-  }, [analyze.libraryHit]);
+    if (!analyze.libraryHit || !venueId) return;
+    void loadSongDetail(analyze.libraryHit.songId, 'input');
+  }, [analyze.libraryHit, loadSongDetail, venueId]);
 
   useEffect(() => {
     if (analyze.candidates) {
@@ -163,10 +154,11 @@ export function SongPage() {
       setSongTitle(analyze.job.parsed.song_title);
       setSections(analyze.job.parsed.sections);
       setWarnings(analyze.job.parsed.warnings ?? []);
-      if (analyze.job.songId) {
-        setSongId(analyze.job.songId);
-      }
+      setSongId(null);
       setSongCategory('praise');
+      setLibraryCategory('');
+      setPresentationFilename('');
+      setSectionsHint(null);
       setStep('edit');
       return;
     }
@@ -187,7 +179,7 @@ export function SongPage() {
   ]);
 
   function handleAnalyze(payload: SongUploadPayload) {
-    if (isAnalyzing) return;
+    if (isAnalyzing || !venueId) return;
 
     setLastUploadPayload(payload);
     setSongArtist(null);
@@ -197,6 +189,7 @@ export function SongPage() {
     setFromLibrary(false);
     setIsDraftSession(true);
     setSaveMessage(null);
+    setSectionsHint(null);
     build.reset();
     setStep('analyzing');
     setStatusMessage(null);
@@ -204,13 +197,13 @@ export function SongPage() {
     const body: SongAnalyzeRequest = {
       imageBase64: payload.imageBase64,
       imageMimeType: payload.imageMimeType,
-      saveToLibrary: true,
+      venueId,
     };
     analyze.start.mutate(body);
   }
 
   function handleForceReanalyze() {
-    if (!lastUploadPayload) return;
+    if (!lastUploadPayload || !venueId) return;
     const title = songTitle.trim();
     if (!title) {
       setSaveMessage('곡 제목을 입력한 뒤 분석해 주세요.');
@@ -227,81 +220,33 @@ export function SongPage() {
       imageBase64: lastUploadPayload.imageBase64,
       imageMimeType: lastUploadPayload.imageMimeType,
       forceReanalyze: true,
-      saveToLibrary: false,
       librarySongId: songId ?? undefined,
+      venueId,
     });
   }
 
-  function goToLibraryDetailAfterSave(message: string) {
-    setIsDraftSession(false);
-    setFromLibrary(true);
-    setSaveMessage(null);
-    setUploadModalOpen(false);
-    setDetailReturnStep('input');
-    setStep('detail');
-    setStatusMessage(message);
-    setLastUploadPayload(null);
-    build.reset();
-  }
-
-  function handleSaveToLibrary() {
-    if (savePending) return;
+  function handleProceedToBuild() {
     const title = songTitle.trim();
     if (!title) {
       setSaveMessage('곡 제목을 입력하세요.');
       return;
     }
-
-    setSaveMessage(null);
-
-    if (songId) {
-      saveSections.mutate(
-        { songId, sections, title, category: songCategory },
-        {
-          onSuccess: () => {
-            if (isDraftSession) {
-              goToLibraryDetailAfterSave(
-                '라이브러리에 저장했습니다. 아래에서 PP 빌드·송출을 진행하세요.',
-              );
-            } else {
-              setSaveMessage(null);
-              setStep('detail');
-              setStatusMessage('라이브러리에 저장했습니다.');
-            }
-          },
-          onError: (err) => setSaveMessage(err.message),
-        },
-      );
+    if (!allSectionsValid(sections)) {
+      setSaveMessage('모든 구간에 1~2줄 가사를 넣어 주세요.');
       return;
     }
 
-    createSongMutation.mutate(
-      { title, sections, category: songCategory },
-      {
-        onSuccess: (detail) => {
-          setSongId(detail.songId);
-          if (detail.title) {
-            setSongTitle(detail.title);
-          }
-          setSongCategory(detail.category);
-          setSongArtist(detail.artist);
-          if (Array.isArray(detail.sections)) {
-            setSections(detail.sections);
-          }
-          goToLibraryDetailAfterSave(
-            '라이브러리에 저장했습니다. 아래에서 PP 빌드·송출을 진행하세요.',
-          );
-        },
-        onError: (err) => setSaveMessage(err.message),
-      },
-    );
+    setSaveMessage(null);
+    setStatusMessage(null);
+    setUploadModalOpen(false);
+    setLastUploadPayload(null);
+    build.reset();
+    setActiveIndex(null);
+    setPendingIndex(null);
+    setStep('build');
   }
 
   function handleStartBuildFromLibrary() {
-    if (!songId) {
-      setStatusMessage('먼저 라이브러리에 곡을 저장하세요.');
-      return;
-    }
     setStatusMessage(null);
     setSaveMessage(null);
     build.reset();
@@ -312,10 +257,31 @@ export function SongPage() {
 
   function handleBuild() {
     if (!venueId || build.isPending || !operationalReady) return;
-    if (!songId) {
-      setStatusMessage('저장된 곡만 빌드할 수 있습니다. 곡 라이브러리에서 진행하세요.');
+
+    const title = songTitle.trim();
+    const libraryCategoryOverride = inferLibraryCategory(songCategory, title);
+
+    if (isDraftSession || !songId) {
+      if (!title || !allSectionsValid(sections)) {
+        setStatusMessage('검수 화면에서 제목·구간을 확인하세요.');
+        return;
+      }
+      if (buildMode === 'replace') {
+        const ok = window.confirm(
+          'Libraries 폴더의 .pro 슬라이드를 새로 만듭니다. 계속할까요?',
+        );
+        if (!ok) return;
+      }
+      build.mutate({
+        venueId,
+        buildMode,
+        songTitle: title,
+        sections,
+        ...(libraryCategoryOverride ? { libraryCategory: libraryCategoryOverride } : {}),
+      });
       return;
     }
+
     if (buildMode === 'replace') {
       const ok = window.confirm(
         'Libraries 폴더의 .pro 슬라이드를 새로 만듭니다. 계속할까요?',
@@ -323,12 +289,11 @@ export function SongPage() {
       if (!ok) return;
     }
 
-    const libraryCategory = inferLibraryCategory(songCategory, songTitle);
     build.mutate({
       venueId,
-      songId,
       buildMode,
-      ...(libraryCategory ? { libraryCategory } : {}),
+      songId,
+      ...(libraryCategoryOverride ? { libraryCategory: libraryCategoryOverride } : {}),
     });
   }
 
@@ -359,6 +324,7 @@ export function SongPage() {
     setStep('input');
     setSongId(null);
     setSections([]);
+    setSectionsHint(null);
     setWarnings([]);
     setFromLibrary(false);
     setIsDraftSession(false);
@@ -370,35 +336,31 @@ export function SongPage() {
     setSongTitle('');
     setSongCategory('praise');
     setSongArtist(null);
+    setLibraryCategory('');
+    setPresentationFilename('');
     setUploadModalOpen(false);
   }
 
   const stepRef = useRef(step);
   const detailReturnStepRef = useRef(detailReturnStep);
   const isDraftSessionRef = useRef(isDraftSession);
-  const fromLibraryRef = useRef(fromLibrary);
 
   stepRef.current = step;
   detailReturnStepRef.current = detailReturnStep;
   isDraftSessionRef.current = isDraftSession;
-  fromLibraryRef.current = fromLibrary;
 
   const handleInternalBack = useCallback(() => {
     const current = stepRef.current;
 
     switch (current) {
       case 'build':
-        setStep('detail');
+        setStep(isDraftSessionRef.current ? 'edit' : 'detail');
         break;
       case 'detail':
         setStep(detailReturnStepRef.current);
         break;
       case 'edit':
-        if (isDraftSessionRef.current || !fromLibraryRef.current) {
-          handleResetFlow();
-        } else {
-          setStep('detail');
-        }
+        handleResetFlow();
         break;
       case 'candidates':
         analyze.reset();
@@ -428,36 +390,12 @@ export function SongPage() {
     setStep(detailReturnStep);
   }
 
-  function handleDeleteFromLibrary() {
-    if (!songId || deletePending) return;
+  function handleEditBack() {
     const ok = window.confirm(
-      `「${songTitle}」 곡을 라이브러리에서 삭제할까요?\n삭제 후에는 목록에서 보이지 않습니다.`,
+      '검수를 취소하면 분석 결과가 사라집니다. 계속할까요?',
     );
     if (!ok) return;
-
-    deleteSongMutation.mutate(songId, {
-      onSuccess: () => {
-        handleResetFlow();
-      },
-    });
-  }
-
-  function handleEditBack() {
-    if (isDraftSession) {
-      const ok = window.confirm(
-        '저장하지 않은 분석 결과가 사라집니다. 계속할까요?',
-      );
-      if (!ok) return;
-    }
     if (syncHistoryBack()) return;
-    if (isDraftSession) {
-      handleResetFlow();
-      return;
-    }
-    if (fromLibrary && songId) {
-      setStep('detail');
-      return;
-    }
     handleResetFlow();
   }
 
@@ -476,6 +414,10 @@ export function SongPage() {
 
   const isLibraryHome = step === 'input';
 
+  const canShowBuild =
+    step === 'build' &&
+    (Boolean(songId) || (isDraftSession && sections.length > 0));
+
   const subtitle = isLibraryHome
     ? '제목·아티스트로 검색하거나 장르를 골라 곡을 찾으세요.'
     : step === 'analyzing'
@@ -483,11 +425,9 @@ export function SongPage() {
       : step === 'candidates'
         ? '라이브러리 후보 중 곡을 선택하세요.'
         : step === 'detail'
-          ? '저장된 곡입니다. PP 빌드·송출 또는 가사 수정을 선택하세요.'
+          ? '카탈로그 곡입니다. PP 빌드·송출을 진행하세요.'
           : step === 'edit'
-            ? isDraftSession
-              ? '제목·장르·구간을 검수한 뒤 라이브러리에 저장하세요.'
-              : '장르·구간을 수정한 뒤 저장하세요. 빌드는 상세 화면에서 진행합니다.'
+            ? '제목·장르·구간을 검수한 뒤 PP 빌드를 진행하세요.'
             : step === 'build'
               ? `${songTitle || '곡'} — PP 빌드 후 슬라이드를 탭해 송출하세요.`
               : '';
@@ -534,6 +474,15 @@ export function SongPage() {
         <StatusBanner tone="error">{analyze.jobError.message}</StatusBanner>
       ) : null}
 
+      {step === 'edit' &&
+      isDraftSession &&
+      analyze.job?.status === 'finished' ? (
+        <StatusBanner tone="info">
+          라이브러리는 pro-presenter-data에서 관리합니다. 검수 후 PP 빌드를
+          진행하고, 영구 반영은 data repo에 commit하세요.
+        </StatusBanner>
+      ) : null}
+
       {fromLibrary && step === 'detail' && analyze.libraryHit ? (
         <StatusBanner tone="success">
           저장된 가사를 불러왔습니다 (AI 분석 생략).
@@ -567,12 +516,6 @@ export function SongPage() {
         />
       ) : null}
 
-      {deleteSongMutation.error && step === 'detail' ? (
-        <StatusBanner tone="error">
-          {deleteSongMutation.error.message}
-        </StatusBanner>
-      ) : null}
-
       {statusMessage && step === 'detail' ? (
         <StatusBanner tone="success">{statusMessage}</StatusBanner>
       ) : null}
@@ -582,21 +525,16 @@ export function SongPage() {
           title={songTitle}
           category={songCategory}
           artist={songArtist}
+          libraryCategory={libraryCategory}
+          presentationFilename={presentationFilename}
           sections={sections ?? []}
+          sectionsHint={sectionsHint}
           disabled={actionsDisabled}
-          buildDisabled={!operationalReady || !songId}
-          deletePending={deletePending}
+          buildDisabled={!operationalReady}
           backLabel={
             detailReturnStep === 'candidates' ? '후보 목록으로' : '목록으로'
           }
           onBuild={handleStartBuildFromLibrary}
-          onEdit={() => {
-            setStatusMessage(null);
-            setStep('edit');
-          }}
-          onDelete={
-            fromLibrary && songId ? handleDeleteFromLibrary : undefined
-          }
           onBack={() => {
             setStatusMessage(null);
             handleDetailBack();
@@ -604,7 +542,7 @@ export function SongPage() {
         />
       ) : null}
 
-      {!loadingSong && step === 'edit' ? (
+      {!loadingSong && step === 'edit' && isDraftSession ? (
         <>
           <SongReviewHeader
             songTitle={songTitle}
@@ -616,7 +554,7 @@ export function SongPage() {
             onTitleChange={setSongTitle}
             onCategoryChange={setSongCategory}
             onReanalyze={
-              isDraftSession && lastUploadPayload && songTitle.trim()
+              lastUploadPayload && songTitle.trim()
                 ? () => setReanalyzeConfirmOpen(true)
                 : undefined
             }
@@ -625,30 +563,19 @@ export function SongPage() {
             sections={sections}
             warnings={warnings}
             disabled={actionsDisabled}
-            canSave={isDraftSession || Boolean(songId)}
-            savePending={savePending}
+            canSave
             saveMessage={saveMessage}
-            saveLabel={
-              isDraftSession && !songId
-                ? '라이브러리에 최종 저장'
-                : '라이브러리에 저장'
-            }
+            saveLabel="PP 빌드 진행"
             onChange={setSections}
-            onSave={handleSaveToLibrary}
+            onSave={handleProceedToBuild}
             savePrimary
             onBack={handleEditBack}
-            backLabel={
-              isDraftSession
-                ? '분석 취소'
-                : fromLibrary && songId
-                  ? '상세로'
-                  : '입력으로'
-            }
+            backLabel="분석 취소"
           />
         </>
       ) : null}
 
-      {!loadingSong && step === 'build' && songId ? (
+      {!loadingSong && canShowBuild ? (
         <SongBuildResult
           buildMode={buildMode}
           onBuildModeChange={setBuildMode}
@@ -664,7 +591,7 @@ export function SongPage() {
           onTrigger={handleTrigger}
           onBack={() => {
             setStatusMessage(null);
-            setStep('detail');
+            setStep(isDraftSession ? 'edit' : 'detail');
           }}
         />
       ) : null}
@@ -735,8 +662,8 @@ export function SongPage() {
               AI 재분석
             </h2>
             <p className={styles.modalText}>
-              악보 이미지로 AI 분석을 다시 실행합니다. 저장하기 전까지 DB에는
-              반영되지 않습니다. 계속할까요?
+              악보 이미지로 AI 분석을 다시 실행합니다. 라이브러리에는 자동
+              저장되지 않습니다. 계속할까요?
             </p>
             <div className={styles.modalActions}>
               <Button

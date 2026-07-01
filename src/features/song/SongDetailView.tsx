@@ -20,30 +20,30 @@ interface SongDetailViewProps {
   title: string;
   category: SongCategory;
   artist?: string | null;
+  libraryCategory?: string;
+  presentationFilename?: string;
   sections: SongSection[];
+  sectionsHint?: string | null;
   disabled?: boolean;
   buildDisabled?: boolean;
-  deletePending?: boolean;
   backLabel?: string;
   onBuild: () => void;
-  onEdit: () => void;
   onBack: () => void;
-  onDelete?: () => void;
 }
 
 export function SongDetailView({
   title,
   category,
   artist,
+  libraryCategory,
+  presentationFilename,
   sections,
+  sectionsHint,
   disabled = false,
   buildDisabled = false,
-  deletePending = false,
   backLabel = '목록으로',
   onBuild,
-  onEdit,
   onBack,
-  onDelete,
 }: SongDetailViewProps) {
   const safeSections = sections ?? [];
 
@@ -53,16 +53,25 @@ export function SongDetailView({
         <div className={styles.heroMeta}>
           <SongCategoryBadge category={category} size="md" />
           <span className={styles.heroCategory}>{songCategoryLabel(category)}</span>
+          {libraryCategory ? (
+            <span className={styles.heroCategory}>{libraryCategory}</span>
+          ) : null}
         </div>
         <h2 className={styles.title}>{title}</h2>
         {artist ? <p className={styles.artist}>{artist}</p> : null}
+        {presentationFilename ? (
+          <p className={styles.sectionSummary}>{presentationFilename}</p>
+        ) : null}
         <p className={styles.sectionSummary}>
           가사 구간 {safeSections.length}개
         </p>
       </header>
 
       {safeSections.length === 0 ? (
-        <p className={styles.empty}>저장된 구간이 없습니다.</p>
+        <p className={styles.empty}>
+          {sectionsHint ??
+            '구간이 없습니다. PP 빌드 시 에이전트가 .pro에서 불러옵니다.'}
+        </p>
       ) : (
         <ul className={styles.list}>
           {safeSections.map((section, index) => {
@@ -95,25 +104,13 @@ export function SongDetailView({
       )}
 
       <p className={styles.buildHint}>
-        ProPresenter 빌드·송출은 라이브러리에 저장된 곡에서 진행합니다.
+        곡 데이터는 pro-presenter-data에서 관리됩니다. PP 빌드·송출만 이
+        화면에서 진행하세요.
       </p>
       <div className={styles.actions}>
         <Button fullWidth disabled={disabled || buildDisabled} onClick={onBuild}>
           PP 빌드 · 송출
         </Button>
-        <Button variant="secondary" fullWidth disabled={disabled} onClick={onEdit}>
-          가사·구간·장르 수정
-        </Button>
-        {onDelete ? (
-          <Button
-            variant="danger"
-            fullWidth
-            disabled={disabled || deletePending}
-            onClick={onDelete}
-          >
-            {deletePending ? '삭제 중…' : '라이브러리에서 삭제'}
-          </Button>
-        ) : null}
         <Button variant="secondary" fullWidth disabled={disabled} onClick={onBack}>
           {backLabel}
         </Button>

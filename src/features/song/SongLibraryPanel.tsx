@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Spinner, StatusBanner } from '@/components';
 import type { SongListItem } from '@/api';
-import { useSongCategories, useSongs } from '@/hooks';
+import { useSongs } from '@/hooks';
 import { SongCategoryBadge } from './SongCategoryBadge';
 import {
   SongCategoryFilter,
   type SongCategoryFilterValue,
 } from './SongCategoryFilter';
-import { SongCategoryManage } from './SongCategoryManage';
 import styles from './SongLibraryPanel.module.css';
 
 interface SongLibraryPanelProps {
@@ -23,6 +22,11 @@ function formatUpdatedAt(iso: string): string {
   }
 }
 
+function formatSectionCount(count: number | null): string {
+  if (count == null) return '구간 —';
+  return `구간 ${count}`;
+}
+
 export function SongLibraryPanel({
   disabled = false,
   onSelect,
@@ -33,27 +37,18 @@ export function SongLibraryPanel({
   const category =
     categoryFilter === 'all' ? undefined : categoryFilter;
   const songs = useSongs(query, category);
-  const {
-    refetch: refetchCategories,
-    isFetching: categoriesFetching,
-    error: categoriesError,
-  } = useSongCategories();
 
   const items = songs.data?.items ?? [];
   const total = songs.data?.total ?? 0;
-  const listRefreshing = songs.isFetching || categoriesFetching;
-
-  function handleRefresh() {
-    void songs.refetch();
-    void refetchCategories();
-  }
+  const listRefreshing = songs.isFetching;
 
   return (
     <div className={styles.root}>
       <header className={styles.header}>
         <h1 className={styles.title}>찬양 라이브러리</h1>
         <p className={styles.subtitle}>
-          제목·아티스트로 검색하거나 장르를 골라 곡을 찾으세요.
+          pro-presenter-data 카탈로그에서 곡을 검색합니다. 편집·저장은 data
+          repo에서 관리합니다.
         </p>
       </header>
 
@@ -64,7 +59,6 @@ export function SongLibraryPanel({
             onChange={setCategoryFilter}
             disabled={disabled}
           />
-          <SongCategoryManage disabled={disabled} layout="inline" />
         </div>
 
         <div className={styles.searchBlock}>
@@ -102,7 +96,7 @@ export function SongLibraryPanel({
                 .join(' ')}
               disabled={disabled || listRefreshing || songs.isLoading}
               aria-label="목록 새로고침"
-              onClick={handleRefresh}
+              onClick={() => void songs.refetch()}
             >
               <svg
                 className={[
@@ -125,12 +119,6 @@ export function SongLibraryPanel({
           </div>
         </div>
       </div>
-
-      {categoriesError ? (
-        <StatusBanner tone="warning">
-          카테고리 목록을 불러오지 못했습니다. 장르 필터가 제한될 수 있습니다.
-        </StatusBanner>
-      ) : null}
 
       {songs.isLoading ? <Spinner centered /> : null}
       {songs.error ? (
@@ -156,8 +144,10 @@ export function SongLibraryPanel({
                   <span className={styles.itemTitle}>{item.title}</span>
                 </div>
                 <span className={styles.itemMeta}>
+                  {item.libraryCategory ? `${item.libraryCategory} · ` : ''}
                   {item.artist ? `${item.artist} · ` : ''}
-                  구간 {item.sectionCount} · {formatUpdatedAt(item.updatedAt)}
+                  {formatSectionCount(item.sectionCount)} ·{' '}
+                  {formatUpdatedAt(item.updatedAt)}
                 </span>
               </button>
             </li>
@@ -171,11 +161,12 @@ export function SongLibraryPanel({
           <p>
             {query.trim() || categoryFilter !== 'all'
               ? '조건에 맞는 곡이 없습니다.'
-              : '저장된 곡이 없습니다.'}
+              : '카탈로그에 곡이 없습니다.'}
           </p>
           {!query.trim() && categoryFilter === 'all' ? (
             <p className={styles.emptyHint}>
-              우측 하단 + 버튼으로 악보를 추가하세요.
+              우측 하단 + 버튼으로 신규 악보를 분석·빌드하거나, NAS에
+              pro-presenter-data가 배포됐는지 확인하세요.
             </p>
           ) : null}
         </div>

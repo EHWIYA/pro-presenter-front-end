@@ -5,7 +5,7 @@ export type DraftFlowStep = 'upload' | 'analyzing' | 'edit';
 const STEPS: { id: DraftFlowStep; label: string }[] = [
   { id: 'upload', label: '악보' },
   { id: 'analyzing', label: '분석' },
-  { id: 'edit', label: '검수·저장' },
+  { id: 'edit', label: '검수' },
 ];
 
 interface SongDraftFlowStepsProps {

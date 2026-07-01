@@ -48,7 +48,10 @@ export function normalizeSongDetail(raw: Record<string, unknown>): SongDetail {
     artist: raw.artist === null ? null : (asString(raw.artist) ?? null),
     category: normalizeSongCategory(raw.category ?? raw.genre, tags),
     tags,
+    libraryCategory: asString(raw.libraryCategory) ?? '',
+    presentationFilename: asString(raw.presentationFilename) ?? '',
     sections: normalizeSections(raw.sections),
+    sectionsHint: asString(raw.sectionsHint),
     createdAt: asString(raw.createdAt) ?? '',
     updatedAt: asString(raw.updatedAt) ?? '',
   };
@@ -126,6 +129,7 @@ export function normalizeSongJob(raw: Record<string, unknown>): SongJobResponse 
     errorCode: asString(raw.errorCode ?? raw.error_code),
     songId: asString(raw.songId),
     libraryAction: raw.libraryAction as SongJobResponse['libraryAction'],
+    libraryReason: asString(raw.libraryReason ?? raw.library_reason),
     songTitle: asString(raw.songTitle),
   };
 }

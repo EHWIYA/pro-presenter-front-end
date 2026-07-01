@@ -4,12 +4,10 @@ export { fetchCurrentPresentation, fetchVenuePresentations } from './presentatio
 export { buildWorship, triggerSlide } from './worship';
 export { analyzeSong, buildSong, getSongJob } from './song';
 export {
-  createSongCategory,
-  deleteSongCategory,
-  fetchSongCategories,
-  updateSongCategory,
-} from './songCategories';
-export { createSong, deleteSong, fetchSongs, fetchSong, updateSongSections } from './songs';
+  fetchLibrarySongSections,
+  fetchSongs,
+  fetchSong,
+} from './songs';
 export {
   normalizeBuildResponse,
   normalizeSongDetail,
@@ -23,6 +21,7 @@ export type {
   AnalyzeResponse,
   ApiErrorBody,
   LibraryAction,
+  LibrarySongSectionsResponse,
   PresentationGroupSummary,
   PresentationSummary,
   SlideMapEntry,
@@ -34,11 +33,6 @@ export type {
   SongBuildResponse,
   BuiltinSongCategory,
   SongCategory,
-  CreateSongRequest,
-  DeleteSongCategoryResponse,
-  DeleteSongResponse,
-  SongCategoriesResponse,
-  SongCategoryRecord,
   SongDetail,
   SongJobResponse,
   SongListItem,
@@ -46,7 +40,6 @@ export type {
   SongParsed,
   SongSection,
   SongSectionType,
-  UpdateSongSectionsRequest,
   Venue,
   VenueStatus,
   VenueStatusResponse,

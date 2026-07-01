@@ -18,6 +18,7 @@ export interface VenueProbe {
 /** pro-api GET /venues/{id}/probe 원본 */
 export interface VenueProbeApiResponse {
   venue_id: string;
+  connected?: boolean;
   ok?: boolean;
   online?: boolean;
   agent_reachable?: boolean;
@@ -25,9 +26,11 @@ export interface VenueProbeApiResponse {
   agent_message?: string;
   agent_health_url?: string;
   url?: string;
-  status_code?: number;
+  status_code?: string | number;
+  http_status?: number;
   hint?: string | null;
   message?: string;
+  checked_at?: string;
 }
 
 /** GET /venues/status venue별 상태 요약 */
@@ -124,11 +127,11 @@ export interface ApiErrorBody {
   message?: string;
 }
 
-/** 기본 곡 장르 3종 */
-export type BuiltinSongCategory = 'praise' | 'hymn' | 'special';
+/** 카탈로그 장르 (pro-presenter-data 폴더·BFF category) */
+export type BuiltinSongCategory = 'praise' | 'hymn' | 'hymnal' | 'special';
 
-/** 기본 3종 또는 사용자 추가 `custom:<slug>` */
-export type SongCategory = BuiltinSongCategory | `custom:${string}`;
+/** API category — custom:… 더 이상 없음 */
+export type SongCategory = BuiltinSongCategory;
 
 export type SongSectionType =
   | 'intro'
@@ -154,8 +157,11 @@ export interface SongAnalyzeRequest {
   imageMimeType?: string;
   lyricsText?: string;
   forceReanalyze?: boolean;
+  /** 하위 호환 — BFF 무시 */
   saveToLibrary?: boolean;
   librarySongId?: string | null;
+  /** library hit 시 sections 채우기 */
+  venueId?: string;
   clientRef?: string;
 }
 
@@ -215,6 +221,7 @@ export interface SongJobResponse {
   errorCode?: string;
   songId?: string;
   libraryAction?: LibraryAction;
+  libraryReason?: string;
   songTitle?: string;
 }
 
@@ -251,12 +258,15 @@ export interface SongBuildResponse {
 }
 
 export interface SongListItem {
+  /** 경로형 ID — 예: 찬양/주님의 마음 */
   songId: string;
   title: string;
   artist: string | null;
   category: SongCategory;
   tags: string[];
-  sectionCount: number;
+  libraryCategory: string;
+  presentationFilename: string;
+  sectionCount: number | null;
   updatedAt: string;
 }
 
@@ -271,40 +281,17 @@ export interface SongDetail {
   artist: string | null;
   category: SongCategory;
   tags: string[];
+  libraryCategory: string;
+  presentationFilename: string;
   sections: SongSection[];
+  sectionsHint?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface UpdateSongSectionsRequest {
-  sections: SongSection[];
-  title?: string;
-  category?: SongCategory;
-}
-
-export interface CreateSongRequest {
-  title: string;
-  sections: SongSection[];
-  category?: SongCategory;
-}
-
-export interface DeleteSongResponse {
+/** GET /venues/{venueId}/library/songs/{songId}/sections */
+export interface LibrarySongSectionsResponse {
   songId: string;
-  deleted: true;
-}
-
-export interface SongCategoryRecord {
-  id: `custom:${string}`;
-  label: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SongCategoriesResponse {
-  builtin: BuiltinSongCategory[];
-  custom: SongCategoryRecord[];
-}
-
-export interface DeleteSongCategoryResponse {
-  deleted: true;
+  libraryCategory: string;
+  sections: SongSection[];
 }

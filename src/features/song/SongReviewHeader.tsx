@@ -75,8 +75,8 @@ export function SongReviewHeader({
 
       {isDraft ? (
         <p className={styles.draftNote}>
-          장르·제목·구간을 확인한 뒤 저장하세요. 저장 전에 나가면 분석 결과가
-          사라집니다.
+          장르·제목·구간을 확인한 뒤 PP 빌드를 진행하세요. 라이브러리 저장은
+          pro-presenter-data repo에서 합니다.
         </p>
       ) : null}
 

@@ -170,7 +170,7 @@ export function SongUploadPage({
         >
           <p id="song-image-hint" className={styles.pasteHint}>
             악보 이미지를 선택하거나 붙여넣기(Ctrl+V / ⌘+V)하세요. 제목·장르는
-            분석이 끝난 뒤 검수·저장 화면에서 정합니다.
+            분석이 끝난 뒤 검수 화면에서 정합니다.
           </p>
           <input
             id="song-image"
@@ -194,8 +194,8 @@ export function SongUploadPage({
       </div>
 
       <p className={styles.hint}>
-        「분석 시작」 후 가사 구간을 검수하고, 그때 장르를 선택해 라이브러리에
-        저장합니다.
+        「분석 시작」 후 가사 구간을 검수하고 PP 빌드를 진행합니다. 라이브러리
+        반영은 pro-presenter-data repo에서 합니다.
       </p>
 
       {localError ? <StatusBanner tone="error">{localError}</StatusBanner> : null}

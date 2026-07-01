@@ -16,8 +16,8 @@ export function inferLibraryCategory(
   if (HYMN_NUMBER_TITLE.test(trimmed)) {
     return '찬송가';
   }
-  if (category.startsWith('custom:')) {
-    return undefined;
+  if (category === 'hymnal') {
+    return '찬송가';
   }
   if (category === 'hymn') {
     return '성가곡';
