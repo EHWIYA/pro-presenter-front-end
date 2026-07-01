@@ -43,8 +43,8 @@ npm run build
 
 1. **연결** — venue 선택 · probe → 성공 시 **홈** 이동
 2. **홈** — 프레젠테이션·그룹·슬라이드 수 목록
-3. **구절** — 성경 구절 입력 → POST build → `slide_map`
-4. **찬양** — 신규·악보: 이미지 → AI 분석 → **검수·저장**(장르 선택) · 라이브러리: 곡 선택 → build-song → trigger  
+3. **구절** — 성경 참조(예: 마 3:1-10) + `.pro` 파일명(예: `260701-말씀.pro`) → POST build → `Libraries/말씀/*.pro` · `slide_map`
+4. **찬양** — 신규·악보: 이미지 → AI 분석 → **검수·저장**(장르 선택) · 라이브러리: 곡 선택 → build-song(`libraryCategory` BFF 자동·명시) → trigger  
    (백엔드 장르 API 공조는 일괄 진행 — 초안 [docs/backend-mail-song-categories.md](docs/backend-mail-song-categories.md))
 5. **송출** — 구절 flow용 trigger (찬양은 찬양 탭에서 직접 송출)
 

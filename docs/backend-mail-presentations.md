@@ -26,7 +26,7 @@ worship `build`/`trigger`·`probe`·`GET /venues` 연동은 기존 안내 기준
 |------|-------------|
 | `GET /venues` | 응답 `{ "venues": [...] }` 래핑 정규화 |
 | `GET /venues/{id}/probe` | 응답 `ok` → UI `agent_reachable` 매핑 |
-| worship build/trigger | 경로·body(`text`, `index`) 변경 없음 |
+| worship build/trigger | build body: `reference`, `presentation_filename` (snake_case) · trigger `{ index }` 변경 없음 |
 
 ---
 
@@ -91,7 +91,7 @@ GET /venues/{venue_id}/presentations
 |------|-----|------|
 | `/` | 연결 | 장소 선택 · probe · 성공 시 `/home` |
 | `/home` | 홈 | 위 API 결과 목록 |
-| `/worship/build`, `/worship/trigger` | 기존 | 변경 없음 |
+| `/worship/build`, `/worship/trigger` | build: `reference`·`presentation_filename` · trigger 동일 |
 | `/venue` | — | `/` 리다이렉트 (호환) |
 
 ---
