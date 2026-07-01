@@ -122,8 +122,13 @@ export type ApiValidationDetail = {
   input?: unknown;
 };
 
+export type ApiErrorDetailObject = {
+  message?: string;
+  hint?: string;
+};
+
 export interface ApiErrorBody {
-  detail?: string | ApiValidationDetail[];
+  detail?: string | ApiValidationDetail[] | ApiErrorDetailObject;
   message?: string;
 }
 

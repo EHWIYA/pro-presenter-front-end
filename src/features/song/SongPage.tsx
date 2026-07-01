@@ -61,6 +61,7 @@ export function SongPage() {
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [lastUploadPayload, setLastUploadPayload] =
     useState<SongUploadPayload | null>(null);
@@ -95,6 +96,7 @@ export function SongPage() {
       setLoadingSong(true);
       setSaveMessage(null);
       setStatusMessage(null);
+      setLoadError(null);
       try {
         const detail = await fetchSong(id, { venueId });
         let nextSections = detail.sections;
@@ -125,9 +127,9 @@ export function SongPage() {
         setStep('detail');
         build.reset();
       } catch (err) {
-        setStatusMessage(
-          err instanceof Error ? err.message : '곡을 불러오지 못했습니다.',
-        );
+        const message =
+          err instanceof Error ? err.message : '곡을 불러오지 못했습니다.';
+        setLoadError(message);
       } finally {
         setLoadingSong(false);
       }
@@ -491,6 +493,10 @@ export function SongPage() {
 
       {loadingSong ? <Spinner centered /> : null}
 
+      {loadError && (isLibraryHome || step === 'candidates') ? (
+        <StatusBanner tone="error">{loadError}</StatusBanner>
+      ) : null}
+
       {!isAnalyzing && !loadingSong && isLibraryHome ? (
         <SongLibraryPanel
           disabled={actionsDisabled}
@@ -517,7 +523,7 @@ export function SongPage() {
       ) : null}
 
       {statusMessage && step === 'detail' ? (
-        <StatusBanner tone="success">{statusMessage}</StatusBanner>
+        <StatusBanner tone="info">{statusMessage}</StatusBanner>
       ) : null}
 
       {!loadingSong && step === 'detail' ? (

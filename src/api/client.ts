@@ -60,6 +60,10 @@ export async function apiFetch<T>(
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
   const headers = new Headers(init?.headers);
 
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json; charset=utf-8');
+  }
+
   if (!headers.has('Content-Type') && init?.body) {
     headers.set('Content-Type', 'application/json');
   }

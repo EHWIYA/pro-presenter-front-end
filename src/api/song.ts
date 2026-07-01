@@ -29,7 +29,8 @@ export async function analyzeSong(
   assertApiKeyConfigured();
   const base = getApiBaseUrl();
   const url = `${base}/api/v1/song/analyze`;
-  const headers = new Headers({ 'Content-Type': 'application/json' });
+  const headers = new Headers({ 'Content-Type': 'application/json; charset=utf-8' });
+  headers.set('Accept', 'application/json; charset=utf-8');
   const apiKey = getApiKey();
   if (apiKey) headers.set('X-API-Key', apiKey);
 
